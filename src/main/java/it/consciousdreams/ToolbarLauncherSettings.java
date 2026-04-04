@@ -31,8 +31,7 @@ public final class ToolbarLauncherSettings implements PersistentStateComponent<T
 
     private static State createDefaultState() {
         State s = new State();
-        boolean mac = System.getProperty("os.name", "").toLowerCase().contains("mac");
-        String modifier = mac ? "meta alt" : "ctrl alt";
+        String modifier = ToolbarAction.isMac() ? "meta alt" : "ctrl alt";
 
         ActionConfig skipTests = new ActionConfig(
                 UUID.randomUUID().toString(),

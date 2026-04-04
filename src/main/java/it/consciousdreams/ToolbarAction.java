@@ -45,6 +45,11 @@ public class ToolbarAction extends AnAction {
         this.config = config;
     }
 
+    // ── Platform detection ────────────────────────────────────────────────────
+
+    static boolean isWindows() { return System.getProperty("os.name", "").toLowerCase().contains("win"); }
+    static boolean isMac()     { return System.getProperty("os.name", "").toLowerCase().contains("mac"); }
+
     // ── Icon loading ──────────────────────────────────────────────────────────
 
     static Icon loadIcon(String path) {
@@ -144,7 +149,7 @@ public class ToolbarAction extends AnAction {
 
     private void runShellCommand(Project project) {
         try {
-            boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("win");
+            boolean isWindows = isWindows();
             List<String> cmd;
             if (isWindows) {
                 cmd = List.of("cmd.exe", "/c", config.getGoals());

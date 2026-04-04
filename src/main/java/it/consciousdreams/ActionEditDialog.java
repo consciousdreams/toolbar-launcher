@@ -259,8 +259,8 @@ public class ActionEditDialog extends DialogWrapper {
     public String getIconPath() {
         String custom = customIconField.getText().trim();
         if (!custom.isEmpty()) return custom;
-        String[] selected = (String[]) iconCombo.getSelectedItem();
-        return selected != null ? selected[0] : DEFAULT_ICON_PATH;
+        Object selected = iconCombo.getSelectedItem();
+        return selected instanceof String[] s ? s[0] : DEFAULT_ICON_PATH;
     }
 
     public @Nullable String getShortcut() {

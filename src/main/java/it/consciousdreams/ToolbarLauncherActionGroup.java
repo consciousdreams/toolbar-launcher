@@ -19,15 +19,8 @@ public class ToolbarLauncherActionGroup extends ActionGroup {
         ActionManager am = ActionManager.getInstance();
         return ToolbarLauncherSettings.getInstance().getActions().stream()
                 .filter(ActionConfig::isEnabled)
-                .map(config -> {
-                    String id = ActionsRegistrar.PREFIX + config.getId();
-                    AnAction action = am.getAction(id);
-                    if (action == null) {
-                        action = new ToolbarAction(config);
-                        am.registerAction(id, action);
-                    }
-                    return action;
-                })
+                .map(config -> am.getAction(ActionsRegistrar.PREFIX + config.getId()))
+                .filter(action -> action != null)
                 .toArray(AnAction[]::new);
     }
 }
