@@ -1,12 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-  <!-- Background rounded square -->
-  <rect width="40" height="40" rx="8" ry="8" fill="#00704A"/>
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="36" height="36" rx="8" fill="#1E1E1E"/>
 
-  <!-- Lightning bolt (quick build) -->
-  <polygon points="9,6 4,20 8,20 3,34 14,17 9,17 14,6"
-           fill="#FFD700"/>
+  <!-- Toolbar -->
+  <rect x="8" y="10" width="24" height="5" rx="2" fill="#3C3F41"/>
 
-  <!-- Bold italic "m" -->
-  <text x="14" y="27" font-family="Arial, sans-serif" font-size="26"
-        font-style="italic" font-weight="bold" fill="#FFFFFF">m</text>
+  <!-- Wrench -->
+  <path d="M24 22a4 4 0 0 1-5 5l-5 5-2-2 5-5a4 4 0 0 1 5-5l-2 2 2 2 2-2z"
+        fill="#4FC1FF"/>
 </svg>
