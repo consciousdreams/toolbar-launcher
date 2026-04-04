@@ -1,4 +1,11 @@
+import org.commonmark.parser.Parser
+import org.commonmark.renderer.html.HtmlRenderer
 import org.jetbrains.changelog.Changelog
+
+buildscript {
+    repositories { mavenCentral() }
+    dependencies { classpath("org.commonmark:commonmark:0.22.0") }
+}
 
 plugins {
     id("java")
@@ -43,8 +50,10 @@ intellijPlatform {
         name = providers.gradleProperty("pluginName")
         version = providers.gradleProperty("pluginVersion")
 
-        // Load plugin description from dedicated HTML file
-        description = providers.fileContents(layout.projectDirectory.file("pluginDescription.html")).asText
+        // Load plugin description from Markdown file and convert to HTML
+        description = providers.fileContents(layout.projectDirectory.file("pluginDescription.md")).asText.map { md ->
+            HtmlRenderer.builder().build().render(Parser.builder().build().parse(md))
+        }
 
         val changelog = project.changelog // local variable for configuration cache compatibility
         changeNotes = providers.gradleProperty("pluginVersion").map { pluginVersion ->
