@@ -6,8 +6,6 @@ All files except this README are git-ignored.
 ## Prerequisites
 
 - `openssl` (available via Homebrew: `brew install openssl`)
-- `java` 17+
-- `signer.jar` — already present in this folder
 
 ## Generate signing keys (one-time)
 
@@ -49,7 +47,6 @@ cat private-encrypted.pem | pbcopy   # paste as PRIVATE_KEY
 
 | File | Description |
 |---|---|
-| `signer.jar` | JetBrains marketplace-zip-signer CLI (v0.1.43) |
 | `private.pem` | Unencrypted private key — delete after step 3 |
 | `private-encrypted.pem` | Encrypted private key → `PRIVATE_KEY` secret |
 | `certificate-chain.crt` | Certificate chain → `CERTIFICATE_CHAIN` secret |
