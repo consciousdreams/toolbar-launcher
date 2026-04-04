@@ -1,6 +1,6 @@
 One-click toolbar buttons to run any build command — fully customizable.
 
-**ToolbarLauncher** adds configurable toolbar buttons to IntelliJ IDEA for running Maven, Gradle, npm,
+**Toolbar Launcher** adds configurable toolbar buttons to IntelliJ IDEA for running Maven, Gradle, npm,
 shell scripts and more — no need to open tool windows or configure run configurations every time.
 
 ## Default Toolbar Buttons

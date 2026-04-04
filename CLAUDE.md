@@ -19,17 +19,18 @@ To install manually: **Settings → Plugins → Install Plugin from Disk**, sele
 
 ## Architecture
 
-This is an IntelliJ IDEA plugin called **ToolbarLauncher** that adds fully configurable toolbar buttons to run Maven, Gradle, npm, shell commands and more.
+This is an IntelliJ IDEA plugin called **Toolbar Launcher** that adds fully configurable toolbar buttons to run Maven, Gradle, npm, shell commands and more.
 
 ### Data model
 
-`ActionConfig` — a plain bean persisted via `ToolbarLauncherSettings`:
+`ActionConfig` — a plain bean persisted via `ToolbarLauncherSettings`. All fields are private with getters/setters (required for IntelliJ XML serialization):
 - `id` — stable UUID, used as the `ActionManager` registration key
 - `label` — button tooltip text
 - `goals` — full command string, e.g. `clean install -Dmaven.test.skip=true` or `./gradlew build`
 - `iconPath` — `/icons/maven_install.svg` (classpath) or an absolute filesystem path to a custom SVG
 - `shortcut` — `KeyStroke.toString()` format, e.g. `"meta alt pressed S"`
 - `commandType` — `ToolType` id: `maven`, `gradle`, `npm`, `yarn`, `make`, `shell`
+- `enabled` — when `false`, the action is unregistered from `ActionManager` and hidden from the toolbar
 
 ### Settings persistence
 
@@ -38,15 +39,15 @@ This is an IntelliJ IDEA plugin called **ToolbarLauncher** that adds fully confi
 ### Action registration
 
 `ActionsRegistrar` implements `AppLifecycleListener` and runs `sync()` on startup. `sync()`:
-1. Unregisters actions removed from settings (tracked via a static `Set<String> registeredIds` — avoids the deprecated `ActionManager.getActionIds(prefix)`)
-2. Registers or refreshes each configured action in `ActionManager` under `it.consciousdreams.toolbarlauncher.{uuid}`
+1. Unregisters actions removed from settings or disabled (tracked via a static `Set<String> registeredIds` — avoids the deprecated `ActionManager.getActionIds(prefix)`)
+2. Registers or refreshes each **enabled** configured action in `ActionManager` under `it.consciousdreams.toolbarlauncher.{uuid}`
 3. Applies/removes keyboard shortcuts on the active `Keymap`
 
 `ToolbarLauncherConfigurable.apply()` also calls `sync()` so toolbar and shortcuts update immediately without restarting.
 
 ### Toolbar rendering
 
-`ToolbarLauncherActionGroup` (registered in `plugin.xml` with `popup="false"`) looks up action instances from `ActionManager` in `getChildren()`. This ensures stable instances are returned on every toolbar refresh — critical for tooltip stability.
+`ToolbarLauncherActionGroup` (registered in `plugin.xml` with `popup="false"`) looks up action instances from `ActionManager` in `getChildren()`. Only **enabled** configs are included. This ensures stable instances are returned on every toolbar refresh — critical for tooltip stability.
 
 ### Action execution
 
@@ -66,14 +67,18 @@ This is an IntelliJ IDEA plugin called **ToolbarLauncher** that adds fully confi
 
 ### Settings UI
 
-`ToolbarLauncherConfigurable` (Settings → Tools → Toolbar Launcher) shows a `JBTable` with icon/type/label/command/shortcut columns and `ToolbarDecorator` for Add/Edit/Remove.
+`ToolbarLauncherConfigurable` (Settings → Tools → Toolbar Launcher) shows a `JBTable` with enabled/icon/type/label/command/shortcut columns and `ToolbarDecorator` for Add/Edit/Remove. The **Enabled** column is a checkbox editable directly in the table without opening the edit dialog.
 
 `ActionEditDialog` fields:
-- **Type** — `ComboBox<ToolType>` (Maven, Gradle, npm, yarn, Make, Shell); pre-fills command with `ToolType.template` when empty
+- **Type** — `ComboBox<ToolType>` (Maven, Gradle, npm, yarn, Make, Shell); pre-fills command with `ToolType.template` and auto-suggests the matching built-in icon when the goals field is empty
 - **Label** / **Command** — text fields; label dynamically changes between "Maven Goals:" and "Command:"
-- **Built-in icon** — `ComboBox` showing the two plugin icons with visual preview
+- **Built-in icon** — `ComboBox` showing one icon per `ToolType` (7 total) with visual preview; icon paths are defined on `ToolType.iconPath`
 - **Custom SVG** — `TextFieldWithBrowseButton` with `.svg` file filter; validated in `doValidate()`
 - **Shortcut** — non-editable `JTextField` that captures key events via `KeyAdapter`; Clear button removes it
+
+### Plugin description
+
+`pluginDescription.md` is the source of truth for the Marketplace description. `build.gradle.kts` converts it to HTML at build time using `org.commonmark:commonmark` (declared in `buildscript`). The JetBrains Marketplace only accepts a safe subset of HTML (no inline styles), so Markdown is the correct authoring format.
 
 ### Compatibility
 

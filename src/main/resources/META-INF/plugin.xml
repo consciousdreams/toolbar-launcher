@@ -1,7 +1,7 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>it.consciousdreams.toolbar-launcher</id>
-    <name>ToolbarLauncher</name>
+    <name>Toolbar Launcher</name>
     <vendor url="https://github.com/consciousdreams/toolbar-launcher">consciousdreams</vendor>
     <description>Adds configurable toolbar buttons to run Maven, Gradle, npm, shell commands and more</description>
 

@@ -1,11 +1,11 @@
-# ToolbarLauncher
+# Toolbar Launcher
 
 <!-- Plugin description -->
 An IntelliJ IDEA plugin that adds fully configurable toolbar buttons to run Maven, Gradle, npm, yarn, Make, and shell commands in a single click.
 
 ## Features
 
-- **Add, edit, or remove** toolbar buttons from **Settings → Tools → Toolbar Launcher**
+- **Add, edit, remove, or disable** toolbar buttons from **Settings → Tools → Toolbar Launcher**
 - Supports **Maven, Gradle, npm, yarn, Make, and shell commands** per button
 - Set any **command** per button (e.g. `clean package -Pproduction` or `./gradlew test`)
 - Assign **custom keyboard shortcuts** per button directly in the settings panel
@@ -15,6 +15,7 @@ An IntelliJ IDEA plugin that adds fully configurable toolbar buttons to run Mave
 - Maven commands use the native **MavenRunner** API — output goes directly to the IDE run console
 - Shell commands run via your **login shell** in the project root, output shown in the Run tool window
 - Maven properties (e.g. `-Dmaven.test.skip=true`) never mutate global settings
+- **Enable or disable** individual buttons without removing them
 
 ## Default Buttons
 
@@ -30,7 +31,8 @@ Open **Settings → Tools → Toolbar Launcher** to manage your buttons:
 - **Add** — set a label, command type, command string, icon, and optional keyboard shortcut
 - **Edit** — update any field of an existing button
 - **Remove** — delete a button from the toolbar
-- **Type** — choose from Maven, Gradle, npm, yarn, Make, or Shell; pre-fills a command template when empty
+- **Enable / Disable** — toggle the checkbox in the table to hide/show a button without removing it
+- **Type** — choose from Maven, Gradle, npm, yarn, Make, or Shell; pre-fills a command template and suggests a matching icon when the command field is empty
 - **Custom SVG** — browse your filesystem to use any SVG file as a button icon
 - **Keyboard shortcut** — click the shortcut field and press any key combination; shortcuts are registered with the IDE's Keymap system and can also be changed via **Settings → Keymap**
 
