@@ -1,0 +1,38 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>it.consciousdreams.toolbar-launcher</id>
+    <name>ToolbarLauncher</name>
+    <vendor url="https://github.com/consciousdreams/toolbar-launcher">consciousdreams</vendor>
+    <description>Adds configurable toolbar buttons to run Maven, Gradle, npm, shell commands and more</description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.idea.maven</depends>
+
+    <applicationListeners>
+        <listener class="it.consciousdreams.ActionsRegistrar"
+                  topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="it.consciousdreams.ToolbarLauncherSettings"/>
+        <applicationConfigurable
+            parentId="tools"
+            instance="it.consciousdreams.ToolbarLauncherConfigurable"
+            id="it.consciousdreams.ToolbarLauncherConfigurable"
+            displayName="Toolbar Launcher"/>
+    </extensions>
+
+    <actions>
+        <group
+            id="it.consciousdreams.ToolbarLauncherGroup"
+            class="it.consciousdreams.ToolbarLauncherActionGroup"
+            text="Toolbar Launcher"
+            popup="false">
+            <!-- New UI toolbar (2022.3+) -->
+            <add-to-group group-id="MainToolbarRight" anchor="last"/>
+            <!-- Legacy toolbar -->
+            <add-to-group group-id="MainToolBar" anchor="last"/>
+            <add-to-group group-id="NavBarToolBar" anchor="last"/>
+        </group>
+    </actions>
+</idea-plugin>
