@@ -35,6 +35,7 @@ public class ActionsRegistrar implements AppLifecycleListener {
         List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
 
         Set<String> expectedIds = configs.stream()
+                .filter(c -> c.enabled)
                 .map(c -> PREFIX + c.id)
                 .collect(Collectors.toSet());
 
@@ -46,9 +47,10 @@ public class ActionsRegistrar implements AppLifecycleListener {
             registeredIds.remove(id);
         }
 
-        // Register or refresh each configured action
+        // Register or refresh each enabled action
         Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         for (ActionConfig config : configs) {
+            if (!config.enabled) continue;
             String id = PREFIX + config.id;
             AnAction existing = am.getAction(id);
             if (existing instanceof ToolbarAction ta && ta.getConfig().equals(config)) {

@@ -8,7 +8,8 @@ public class ActionConfig {
     public String goals;        // Maven goals or shell/tool command
     public String iconPath   = "/icons/maven_install.svg";
     public String shortcut;     // KeyStroke.toString() format, e.g. "ctrl alt pressed S"
-    public String commandType = "maven"; // ToolType id
+    public String  commandType = "maven"; // ToolType id
+    public boolean enabled     = true;
 
     public ActionConfig() {}
 
@@ -27,6 +28,7 @@ public class ActionConfig {
         ActionConfig c = new ActionConfig(id, label, goals, iconPath);
         c.shortcut    = shortcut;
         c.commandType = commandType;
+        c.enabled     = enabled;
         return c;
     }
 
@@ -40,11 +42,12 @@ public class ActionConfig {
                 && Objects.equals(goals, that.goals)
                 && Objects.equals(iconPath, that.iconPath)
                 && Objects.equals(shortcut, that.shortcut)
-                && Objects.equals(commandType, that.commandType);
+                && Objects.equals(commandType, that.commandType)
+                && enabled == that.enabled;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, label, goals, iconPath, shortcut, commandType);
+        return Objects.hash(id, label, goals, iconPath, shortcut, commandType, enabled);
     }
 }

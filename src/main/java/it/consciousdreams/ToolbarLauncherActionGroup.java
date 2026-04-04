@@ -18,6 +18,7 @@ public class ToolbarLauncherActionGroup extends ActionGroup {
     public @NotNull AnAction[] getChildren(@Nullable AnActionEvent e) {
         ActionManager am = ActionManager.getInstance();
         return ToolbarLauncherSettings.getInstance().getActions().stream()
+                .filter(config -> config.enabled)
                 .map(config -> {
                     String id = ActionsRegistrar.PREFIX + config.id;
                     AnAction action = am.getAction(id);

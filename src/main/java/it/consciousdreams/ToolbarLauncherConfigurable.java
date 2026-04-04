@@ -34,10 +34,13 @@ public class ToolbarLauncherConfigurable implements Configurable {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setRowHeight(22);
 
-        // Icon column
+        // Enabled column (checkbox)
         table.getColumnModel().getColumn(0).setMinWidth(28);
         table.getColumnModel().getColumn(0).setMaxWidth(28);
-        table.getColumnModel().getColumn(0).setCellRenderer(new DefaultTableCellRenderer() {
+        // Icon column
+        table.getColumnModel().getColumn(1).setMinWidth(28);
+        table.getColumnModel().getColumn(1).setMaxWidth(28);
+        table.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object value,
                                                            boolean isSelected, boolean hasFocus, int row, int col) {
@@ -50,11 +53,11 @@ public class ToolbarLauncherConfigurable implements Configurable {
             }
         });
         // Type column
-        table.getColumnModel().getColumn(1).setMinWidth(55);
-        table.getColumnModel().getColumn(1).setMaxWidth(55);
-        table.getColumnModel().getColumn(2).setPreferredWidth(160);
-        table.getColumnModel().getColumn(3).setPreferredWidth(230);
-        table.getColumnModel().getColumn(4).setPreferredWidth(100);
+        table.getColumnModel().getColumn(2).setMinWidth(55);
+        table.getColumnModel().getColumn(2).setMaxWidth(55);
+        table.getColumnModel().getColumn(3).setPreferredWidth(160);
+        table.getColumnModel().getColumn(4).setPreferredWidth(230);
+        table.getColumnModel().getColumn(5).setPreferredWidth(100);
 
         JPanel decoratedTable = ToolbarDecorator.createDecorator(table)
                 .setAddAction(button -> addAction())
@@ -160,27 +163,47 @@ public class ToolbarLauncherConfigurable implements Configurable {
         }
 
         @Override public int getRowCount()    { return rows.size(); }
-        @Override public int getColumnCount() { return 5; }
+        @Override public int getColumnCount() { return 6; }
 
         @Override
         public String getColumnName(int col) {
             return switch (col) {
                 case 0 -> "";
-                case 1 -> "Type";
-                case 2 -> "Label";
-                case 3 -> "Command";
+                case 1 -> "";
+                case 2 -> "Type";
+                case 3 -> "Label";
+                case 4 -> "Command";
                 default -> "Shortcut";
             };
+        }
+
+        @Override
+        public Class<?> getColumnClass(int col) {
+            return col == 0 ? Boolean.class : Object.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int col) {
+            return col == 0;
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col == 0 && value instanceof Boolean b) {
+                rows.get(row).enabled = b;
+                fireTableCellUpdated(row, col);
+            }
         }
 
         @Override
         public Object getValueAt(int row, int col) {
             ActionConfig c = rows.get(row);
             return switch (col) {
-                case 0 -> ToolbarAction.loadIcon(c.iconPath);
-                case 1 -> ToolType.fromId(c.commandType).displayName;
-                case 2 -> c.label;
-                case 3 -> c.goals;
+                case 0 -> c.enabled;
+                case 1 -> ToolbarAction.loadIcon(c.iconPath);
+                case 2 -> ToolType.fromId(c.commandType).displayName;
+                case 3 -> c.label;
+                case 4 -> c.goals;
                 default -> {
                     if (c.shortcut == null || c.shortcut.isEmpty()) yield "";
                     KeyStroke ks = KeyStroke.getKeyStroke(c.shortcut);
