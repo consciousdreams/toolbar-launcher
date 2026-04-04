@@ -82,8 +82,8 @@ public class ToolbarLauncherConfigurable implements Configurable {
                     dialog.getGoals(),
                     dialog.getIconPath()
             );
-            config.shortcut    = dialog.getShortcut();
-            config.commandType = dialog.getCommandType();
+            config.setShortcut(dialog.getShortcut());
+            config.setCommandType(dialog.getCommandType());
             tableModel.addRow(config);
         }
     }
@@ -93,13 +93,13 @@ public class ToolbarLauncherConfigurable implements Configurable {
         if (row < 0) return;
         ActionConfig config = tableModel.getRow(row);
         ActionEditDialog dialog = new ActionEditDialog(
-                config.label, config.goals, config.iconPath, config.shortcut, config.commandType);
+                config.getLabel(), config.getGoals(), config.getIconPath(), config.getShortcut(), config.getCommandType());
         if (dialog.showAndGet()) {
-            config.label       = dialog.getLabel();
-            config.goals       = dialog.getGoals();
-            config.iconPath    = dialog.getIconPath();
-            config.shortcut    = dialog.getShortcut();
-            config.commandType = dialog.getCommandType();
+            config.setLabel(dialog.getLabel());
+            config.setGoals(dialog.getGoals());
+            config.setIconPath(dialog.getIconPath());
+            config.setShortcut(dialog.getShortcut());
+            config.setCommandType(dialog.getCommandType());
             tableModel.fireTableRowsUpdated(row, row);
         }
     }
@@ -168,8 +168,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         @Override
         public String getColumnName(int col) {
             return switch (col) {
-                case 0 -> "";
-                case 1 -> "";
+                case 0, 1 -> "";
                 case 2 -> "Type";
                 case 3 -> "Label";
                 case 4 -> "Command";
@@ -190,7 +189,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0 && value instanceof Boolean b) {
-                rows.get(row).enabled = b;
+                rows.get(row).setEnabled(b);
                 fireTableCellUpdated(row, col);
             }
         }
@@ -199,14 +198,14 @@ public class ToolbarLauncherConfigurable implements Configurable {
         public Object getValueAt(int row, int col) {
             ActionConfig c = rows.get(row);
             return switch (col) {
-                case 0 -> c.enabled;
-                case 1 -> ToolbarAction.loadIcon(c.iconPath);
-                case 2 -> ToolType.fromId(c.commandType).displayName;
-                case 3 -> c.label;
-                case 4 -> c.goals;
+                case 0 -> c.isEnabled();
+                case 1 -> ToolbarAction.loadIcon(c.getIconPath());
+                case 2 -> ToolType.fromId(c.getCommandType()).displayName;
+                case 3 -> c.getLabel();
+                case 4 -> c.getGoals();
                 default -> {
-                    if (c.shortcut == null || c.shortcut.isEmpty()) yield "";
-                    KeyStroke ks = KeyStroke.getKeyStroke(c.shortcut);
+                    if (c.getShortcut() == null || c.getShortcut().isEmpty()) yield "";
+                    KeyStroke ks = KeyStroke.getKeyStroke(c.getShortcut());
                     yield ks != null ? KeymapUtil.getKeystrokeText(ks) : "";
                 }
             };

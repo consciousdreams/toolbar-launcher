@@ -22,9 +22,11 @@ import static java.awt.event.KeyEvent.*;
 
 public class ActionEditDialog extends DialogWrapper {
 
-    static final List<String[]> AVAILABLE_ICONS = List.of(
-            new String[]{"/icons/maven_install.svg",            "!m  (skip tests)"},
-            new String[]{"/icons/maven_install_with_tests.svg", "m   (with tests)"}
+    static final String         DEFAULT_ICON_PATH  = "/icons/maven_install.svg";
+    static final String         TESTS_ICON_PATH    = "/icons/maven_install_with_tests.svg";
+    static final List<String[]> AVAILABLE_ICONS    = List.of(
+            new String[]{DEFAULT_ICON_PATH, "!m  (skip tests)"},
+            new String[]{TESTS_ICON_PATH,   "m   (with tests)"}
     );
 
     private final ComboBox<ToolType>         typeCombo;
@@ -80,7 +82,7 @@ public class ActionEditDialog extends DialogWrapper {
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                           boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof String[] entry) {
+                if (value instanceof String[] entry && entry[0] != null) {
                     setIcon(IconLoader.getIcon(entry[0], ActionEditDialog.class));
                     setText(entry[1]);
                 }
@@ -234,7 +236,7 @@ public class ActionEditDialog extends DialogWrapper {
         String custom = customIconField.getText().trim();
         if (!custom.isEmpty()) return custom;
         String[] selected = (String[]) iconCombo.getSelectedItem();
-        return selected != null ? selected[0] : "/icons/maven_install.svg";
+        return selected != null ? selected[0] : DEFAULT_ICON_PATH;
     }
 
     public @Nullable String getShortcut() {

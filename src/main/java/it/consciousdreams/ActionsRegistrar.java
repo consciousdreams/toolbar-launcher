@@ -22,7 +22,7 @@ public class ActionsRegistrar implements AppLifecycleListener {
     private static final Set<String> registeredIds = new HashSet<>();
 
     @Override
-    public void appFrameCreated(@NotNull List<String> commandLineArgs) {
+    public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
     }
 
@@ -35,8 +35,8 @@ public class ActionsRegistrar implements AppLifecycleListener {
         List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
 
         Set<String> expectedIds = configs.stream()
-                .filter(c -> c.enabled)
-                .map(c -> PREFIX + c.id)
+                .filter(ActionConfig::isEnabled)
+                .map(c -> PREFIX + c.getId())
                 .collect(Collectors.toSet());
 
         // Unregister actions no longer in settings
@@ -50,19 +50,20 @@ public class ActionsRegistrar implements AppLifecycleListener {
         // Register or refresh each enabled action
         Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         for (ActionConfig config : configs) {
-            if (!config.enabled) continue;
-            String id = PREFIX + config.id;
-            AnAction existing = am.getAction(id);
-            if (existing instanceof ToolbarAction ta && ta.getConfig().equals(config)) {
-                registeredIds.add(id);
-                continue; // already up to date
+            if (config.isEnabled()) {
+                String id = PREFIX + config.getId();
+                AnAction existing = am.getAction(id);
+                if (existing instanceof ToolbarAction ta && ta.getConfig().equals(config)) {
+                    registeredIds.add(id);
+                } else {
+                    if (existing != null) {
+                        am.unregisterAction(id);
+                    }
+                    am.registerAction(id, new ToolbarAction(config));
+                    registeredIds.add(id);
+                    applyShortcut(keymap, id, config.getShortcut());
+                }
             }
-            if (existing != null) {
-                am.unregisterAction(id);
-            }
-            am.registerAction(id, new ToolbarAction(config));
-            registeredIds.add(id);
-            applyShortcut(keymap, id, config.shortcut);
         }
     }
 

@@ -17,7 +17,10 @@ import java.util.UUID;
 public final class ToolbarLauncherSettings implements PersistentStateComponent<ToolbarLauncherSettings.State> {
 
     public static class State {
-        public List<ActionConfig> actions = new ArrayList<>();
+        private List<ActionConfig> actions = new ArrayList<>();
+
+        public List<ActionConfig> getActions()                    { return actions; }
+        public void               setActions(List<ActionConfig> a) { actions = a; }
     }
 
     private State state = createDefaultState();
@@ -35,19 +38,19 @@ public final class ToolbarLauncherSettings implements PersistentStateComponent<T
                 UUID.randomUUID().toString(),
                 "Maven Clean Install (skip tests)",
                 "clean install -Dmaven.test.skip=true",
-                "/icons/maven_install.svg"
+                ActionEditDialog.DEFAULT_ICON_PATH
         );
-        skipTests.shortcut = modifier + " pressed S";
-        s.actions.add(skipTests);
+        skipTests.setShortcut(modifier + " pressed S");
+        s.getActions().add(skipTests);
 
         ActionConfig withTests = new ActionConfig(
                 UUID.randomUUID().toString(),
                 "Maven Clean Install",
                 "clean install",
-                "/icons/maven_install_with_tests.svg"
+                ActionEditDialog.TESTS_ICON_PATH
         );
-        withTests.shortcut = modifier + " pressed M";
-        s.actions.add(withTests);
+        withTests.setShortcut(modifier + " pressed M");
+        s.getActions().add(withTests);
 
         return s;
     }
@@ -63,10 +66,10 @@ public final class ToolbarLauncherSettings implements PersistentStateComponent<T
     }
 
     public List<ActionConfig> getActions() {
-        return state.actions;
+        return state.getActions();
     }
 
     public void setActions(List<ActionConfig> actions) {
-        state.actions = new ArrayList<>(actions);
+        state.setActions(new ArrayList<>(actions));
     }
 }

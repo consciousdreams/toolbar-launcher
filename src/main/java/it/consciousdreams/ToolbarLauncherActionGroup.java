@@ -15,12 +15,12 @@ public class ToolbarLauncherActionGroup extends ActionGroup {
     }
 
     @Override
-    public @NotNull AnAction[] getChildren(@Nullable AnActionEvent e) {
+    public @NotNull AnAction[] getChildren(@Nullable AnActionEvent ignored) {
         ActionManager am = ActionManager.getInstance();
         return ToolbarLauncherSettings.getInstance().getActions().stream()
-                .filter(config -> config.enabled)
+                .filter(ActionConfig::isEnabled)
                 .map(config -> {
-                    String id = ActionsRegistrar.PREFIX + config.id;
+                    String id = ActionsRegistrar.PREFIX + config.getId();
                     AnAction action = am.getAction(id);
                     if (action == null) {
                         action = new ToolbarAction(config);

@@ -34,14 +34,14 @@ import java.util.Map;
 
 public class ToolbarAction extends AnAction {
 
-    private static final Icon FALLBACK_ICON = IconLoader.getIcon("/icons/maven_install.svg", ToolbarAction.class);
+    private static final Icon FALLBACK_ICON = IconLoader.getIcon(ActionEditDialog.DEFAULT_ICON_PATH, ToolbarAction.class);
 
     private final ActionConfig config;
 
     ActionConfig getConfig() { return config; }
 
     public ToolbarAction(ActionConfig config) {
-        super(config.label, config.label, loadIcon(config.iconPath));
+        super(config.getLabel(), config.getLabel(), loadIcon(config.getIconPath()));
         this.config = config;
     }
 
@@ -101,14 +101,14 @@ public class ToolbarAction extends AnAction {
     private void runMavenCommand(Project project) {
         MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(project);
         if (!mavenProjectsManager.isMavenizedProject()) {
-            Messages.showWarningDialog(project, "This is not a Maven project.", config.label);
+            Messages.showWarningDialog(project, "This is not a Maven project.", config.getLabel());
             return;
         }
 
         List<String> goals = new ArrayList<>();
         Map<String, String> props = new LinkedHashMap<>();
 
-        for (String token : config.goals.trim().split("\\s+")) {
+        for (String token : config.getGoals().trim().split("\\s+")) {
             if (token.startsWith("-D")) {
                 String kv = token.substring(2);
                 int eq = kv.indexOf('=');
@@ -147,11 +147,11 @@ public class ToolbarAction extends AnAction {
             boolean isWindows = System.getProperty("os.name", "").toLowerCase().contains("win");
             List<String> cmd;
             if (isWindows) {
-                cmd = List.of("cmd.exe", "/c", config.goals);
+                cmd = List.of("cmd.exe", "/c", config.getGoals());
             } else {
                 String shell = System.getenv("SHELL");
                 if (shell == null || shell.isEmpty()) shell = "/bin/sh";
-                cmd = List.of(shell, "-c", config.goals);
+                cmd = List.of(shell, "-c", config.getGoals());
             }
 
             GeneralCommandLine commandLine = new GeneralCommandLine(cmd)
@@ -166,7 +166,7 @@ public class ToolbarAction extends AnAction {
             panel.add(console.getComponent(), BorderLayout.CENTER);
 
             RunContentDescriptor descriptor = new RunContentDescriptor(
-                    console, processHandler, panel, config.label);
+                    console, processHandler, panel, config.getLabel());
 
             RunContentManager.getInstance(project).showRunContent(
                     DefaultRunExecutor.getRunExecutorInstance(), descriptor);
@@ -175,7 +175,7 @@ public class ToolbarAction extends AnAction {
             processHandler.startNotify();
 
         } catch (ExecutionException ex) {
-            Messages.showErrorDialog(project, ex.getMessage(), config.label);
+            Messages.showErrorDialog(project, ex.getMessage(), config.getLabel());
         }
     }
 }
