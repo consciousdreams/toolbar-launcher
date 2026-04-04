@@ -24,9 +24,20 @@ public class ActionEditDialog extends DialogWrapper {
 
     static final String         DEFAULT_ICON_PATH  = "/icons/maven_install.svg";
     static final String         TESTS_ICON_PATH    = "/icons/maven_install_with_tests.svg";
+    static final String         GRADLE_ICON_PATH   = "/icons/gradle.svg";
+    static final String         NPM_ICON_PATH      = "/icons/npm.svg";
+    static final String         YARN_ICON_PATH     = "/icons/yarn.svg";
+    static final String         MAKE_ICON_PATH     = "/icons/make.svg";
+    static final String         SHELL_ICON_PATH    = "/icons/shell.svg";
+
     static final List<String[]> AVAILABLE_ICONS    = List.of(
-            new String[]{DEFAULT_ICON_PATH, "!m  (skip tests)"},
-            new String[]{TESTS_ICON_PATH,   "m   (with tests)"}
+            new String[]{DEFAULT_ICON_PATH, "Maven (skip tests)"},
+            new String[]{TESTS_ICON_PATH,   "Maven (with tests)"},
+            new String[]{GRADLE_ICON_PATH,  "Gradle"},
+            new String[]{NPM_ICON_PATH,     "npm"},
+            new String[]{YARN_ICON_PATH,    "Yarn"},
+            new String[]{MAKE_ICON_PATH,    "Make"},
+            new String[]{SHELL_ICON_PATH,   "Shell"}
     );
 
     private final ComboBox<ToolType>         typeCombo;
@@ -54,14 +65,19 @@ public class ActionEditDialog extends DialogWrapper {
         ToolType selected = ToolType.fromId(commandType);
         typeCombo.setSelectedItem(selected);
         updateCommandLabel(selected);
+        if (iconPath == null) autoSelectIcon(selected);
 
         typeCombo.addActionListener(e -> {
             ToolType t = (ToolType) typeCombo.getSelectedItem();
             if (t == null) return;
             updateCommandLabel(t);
+            boolean wasEmpty = goalsField.getText().trim().isEmpty();
             // Pre-fill command field with template only when it is empty
-            if (goalsField.getText().trim().isEmpty() && !t.template.isEmpty()) {
+            if (wasEmpty && !t.template.isEmpty()) {
                 goalsField.setText(t.template);
+            }
+            if (wasEmpty) {
+                autoSelectIcon(t);
             }
         });
 
@@ -71,6 +87,21 @@ public class ActionEditDialog extends DialogWrapper {
 
     private void updateCommandLabel(ToolType type) {
         commandLabel.setText(type.isMaven() ? "Maven Goals:" : "Command:");
+    }
+
+    // ── Icon auto-suggest ─────────────────────────────────────────────────────
+
+    private void autoSelectIcon(ToolType type) {
+        autoSelectIcon(iconCombo, type.iconPath);
+    }
+
+    private static void autoSelectIcon(ComboBox<String[]> combo, String path) {
+        for (int i = 0; i < AVAILABLE_ICONS.size(); i++) {
+            if (AVAILABLE_ICONS.get(i)[0].equals(path)) {
+                combo.setSelectedIndex(i);
+                return;
+            }
+        }
     }
 
     // ── Icon combo ────────────────────────────────────────────────────────────
@@ -89,14 +120,7 @@ public class ActionEditDialog extends DialogWrapper {
                 return this;
             }
         });
-        if (selectedPath != null) {
-            for (int i = 0; i < AVAILABLE_ICONS.size(); i++) {
-                if (AVAILABLE_ICONS.get(i)[0].equals(selectedPath)) {
-                    combo.setSelectedIndex(i);
-                    break;
-                }
-            }
-        }
+        if (selectedPath != null) autoSelectIcon(combo, selectedPath);
         return combo;
     }
 
