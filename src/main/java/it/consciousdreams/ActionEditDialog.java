@@ -4,6 +4,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.util.IconLoader;
@@ -29,6 +30,7 @@ public class ActionEditDialog extends DialogWrapper {
     static final String         YARN_ICON_PATH     = "/icons/yarn.svg";
     static final String         MAKE_ICON_PATH     = "/icons/make.svg";
     static final String         SHELL_ICON_PATH    = "/icons/shell.svg";
+    static final String         DOCKER_ICON_PATH   = "/icons/docker.svg";
 
     static final List<String[]> AVAILABLE_ICONS    = List.of(
             new String[]{DEFAULT_ICON_PATH, "Maven (skip tests)"},
@@ -37,7 +39,8 @@ public class ActionEditDialog extends DialogWrapper {
             new String[]{NPM_ICON_PATH,     "npm"},
             new String[]{YARN_ICON_PATH,    "Yarn"},
             new String[]{MAKE_ICON_PATH,    "Make"},
-            new String[]{SHELL_ICON_PATH,   "Shell"}
+            new String[]{SHELL_ICON_PATH,   "Shell"},
+            new String[]{DOCKER_ICON_PATH,  "Docker"}
     );
 
     private final ComboBox<ToolType>         typeCombo;
@@ -71,14 +74,8 @@ public class ActionEditDialog extends DialogWrapper {
             ToolType t = (ToolType) typeCombo.getSelectedItem();
             if (t == null) return;
             updateCommandLabel(t);
-            boolean wasEmpty = goalsField.getText().trim().isEmpty();
-            // Pre-fill command field with template only when it is empty
-            if (wasEmpty && !t.template.isEmpty()) {
-                goalsField.setText(t.template);
-            }
-            if (wasEmpty) {
-                autoSelectIcon(t);
-            }
+            goalsField.setText(t.template);
+            autoSelectIcon(t);
         });
 
         setTitle(label == null ? "Add Action" : "Edit Action");
@@ -127,8 +124,7 @@ public class ActionEditDialog extends DialogWrapper {
     private TextFieldWithBrowseButton buildCustomIconField(@Nullable String iconPath) {
         TextFieldWithBrowseButton field = new TextFieldWithBrowseButton();
         field.addBrowseFolderListener(
-                "Select SVG Icon", "Choose an SVG file to use as the button icon",
-                null, FileChooserDescriptorFactory.createSingleFileDescriptor("svg")
+                new TextBrowseFolderListener(FileChooserDescriptorFactory.createSingleFileDescriptor("svg"))
         );
         if (iconPath != null && !iconPath.startsWith("/icons/")) {
             field.setText(iconPath);

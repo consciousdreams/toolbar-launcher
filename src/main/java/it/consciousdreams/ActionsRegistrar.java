@@ -1,6 +1,8 @@
 package it.consciousdreams;
 
 import com.intellij.ide.AppLifecycleListener;
+import com.intellij.ide.plugins.DynamicPluginListener;
+import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
@@ -14,9 +16,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class ActionsRegistrar implements AppLifecycleListener {
+public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginListener {
 
     static final String PREFIX = "it.consciousdreams.toolbarlauncher.";
+    private static final String PLUGIN_ID = "it.consciousdreams.toolbar-launcher";
 
     /** Tracks IDs we have registered so we can unregister without querying ActionManager by prefix. */
     private static final Set<String> registeredIds = new HashSet<>();
@@ -24,6 +27,13 @@ public class ActionsRegistrar implements AppLifecycleListener {
     @Override
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
+    }
+
+    @Override
+    public void pluginLoaded(@NotNull IdeaPluginDescriptor pluginDescriptor) {
+        if (PLUGIN_ID.equals(pluginDescriptor.getPluginId().getIdString())) {
+            sync();
+        }
     }
 
     /**

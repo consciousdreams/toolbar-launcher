@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.0.1
+
+### Added
+- Docker command type support (`docker compose up` default template)
+- Tooltip on the Enable checkbox showing "Click to enable / disable this button"
+
+### Changed
+- Selecting a different command type now always updates the command and icon
+- Plugin Marketplace description is now sourced from README.md
+
 ## 1.0.0
 
 ### Added

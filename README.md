@@ -1,21 +1,23 @@
 # Toolbar Launcher
-
 <!-- Plugin description -->
-An IntelliJ IDEA plugin that adds fully configurable toolbar buttons to run Maven, Gradle, npm, yarn, Make, and shell commands in a single click.
+One-click toolbar buttons to run any build command — fully customizable.
+
+**Toolbar Launcher** adds configurable toolbar buttons to IntelliJ IDEA for running Maven, Gradle, npm,
+shell scripts and more — no need to open tool windows or configure run configurations every time.
 
 ## Features
 
-- **Add, edit, remove, or disable** toolbar buttons from **Settings → Tools → Toolbar Launcher**
+- **Fully configurable** — add, edit, or remove toolbar buttons from _Settings → Tools → Toolbar Launcher_
 - Supports **Maven, Gradle, npm, yarn, Make, and shell commands** per button
 - Set any **command** per button (e.g. `clean package -Pproduction` or `./gradlew test`)
 - Assign **custom keyboard shortcuts** per button directly in the settings panel
 - Choose a **built-in icon** or pick any **custom SVG** from your filesystem per button
-- Buttons appear in the **MainToolBar** and **NavBarToolBar** — always one click away
+- Buttons appear in **MainToolBar** and **NavBarToolBar** — always one click away
 - Buttons are automatically **disabled** when no project is open
-- Maven commands use the native **MavenRunner** API — output goes directly to the IDE run console
 - Shell commands run via your **login shell** in the project root, output shown in the Run tool window
-- Maven properties (e.g. `-Dmaven.test.skip=true`) never mutate global settings
-- **Enable or disable** individual buttons without removing them
+- Maven commands use the native **MavenRunner** API — output streams to the IDE's run console
+- Maven properties (e.g. `-Dmaven.test.skip=true`) **never mutate** global settings — fully safe
+- Enable or disable individual buttons without removing them from _Settings → Tools → Toolbar Launcher_
 
 ## Default Buttons
 
@@ -35,6 +37,7 @@ Open **Settings → Tools → Toolbar Launcher** to manage your buttons:
 - **Type** — choose from Maven, Gradle, npm, yarn, Make, or Shell; pre-fills a command template and suggests a matching icon when the command field is empty
 - **Custom SVG** — browse your filesystem to use any SVG file as a button icon
 - **Keyboard shortcut** — click the shortcut field and press any key combination; shortcuts are registered with the IDE's Keymap system and can also be changed via **Settings → Keymap**
+<!-- Plugin description end -->
 
 ## Requirements
 
@@ -108,4 +111,3 @@ Each toolbar button is a `ToolbarAction` instance registered with `ActionManager
 `ToolbarAction` branches on the configured command type:
 - **Maven** — parses goals and `-D` properties, delegates to `MavenRunner.getInstance(project).run()`
 - **Shell/other** — runs via `$SHELL -c <command>` (or `cmd.exe /c` on Windows) using `OSProcessHandler` + `ConsoleView` in the Run tool window
-<!-- Plugin description end -->

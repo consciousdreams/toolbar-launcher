@@ -7,6 +7,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public class ToolbarLauncherActionGroup extends ActionGroup {
 
     public ToolbarLauncherActionGroup() {
@@ -15,12 +17,12 @@ public class ToolbarLauncherActionGroup extends ActionGroup {
     }
 
     @Override
-    public @NotNull AnAction[] getChildren(@Nullable AnActionEvent ignored) {
+    public AnAction @NotNull [] getChildren(@Nullable AnActionEvent ignored) {
         ActionManager am = ActionManager.getInstance();
         return ToolbarLauncherSettings.getInstance().getActions().stream()
                 .filter(ActionConfig::isEnabled)
                 .map(config -> am.getAction(ActionsRegistrar.PREFIX + config.getId()))
-                .filter(action -> action != null)
+                .filter(Objects::nonNull)
                 .toArray(AnAction[]::new);
     }
 }
