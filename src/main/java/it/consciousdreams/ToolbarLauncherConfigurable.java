@@ -30,7 +30,17 @@ public class ToolbarLauncherConfigurable implements Configurable {
     @Override
     public @Nullable JComponent createComponent() {
         tableModel = new ActionsTableModel();
-        table = new JBTable(tableModel);
+        table = new JBTable(tableModel) {
+            @Override
+            public String getToolTipText(java.awt.event.MouseEvent e) {
+                int col = columnAtPoint(e.getPoint());
+                if (col != 0) return super.getToolTipText(e);
+                int row = rowAtPoint(e.getPoint());
+                if (row < 0) return null;
+                boolean enabled = tableModel.getRow(row).isEnabled();
+                return enabled ? "Click to disable this button" : "Click to enable this button";
+            }
+        };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setRowHeight(22);
 
