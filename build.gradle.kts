@@ -1,11 +1,5 @@
-import org.commonmark.parser.Parser
-import org.commonmark.renderer.html.HtmlRenderer
 import org.jetbrains.changelog.Changelog
-
-buildscript {
-    repositories { mavenCentral() }
-    dependencies { classpath("org.commonmark:commonmark:0.22.0") }
-}
+import org.jetbrains.changelog.markdownToHTML
 
 plugins {
     id("java")
@@ -50,9 +44,17 @@ intellijPlatform {
         name = providers.gradleProperty("pluginName")
         version = providers.gradleProperty("pluginVersion")
 
-        // Load plugin description from Markdown file and convert to HTML
-        description = providers.fileContents(layout.projectDirectory.file("pluginDescription.md")).asText.map { md ->
-            HtmlRenderer.builder().build().render(Parser.builder().build().parse(md))
+        // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
+        description = providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
+            val start = "<!-- Plugin description -->"
+            val end = "<!-- Plugin description end -->"
+
+            with(it.lines()) {
+                if (!containsAll(listOf(start, end))) {
+                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
+                }
+                subList(indexOf(start) + 1, indexOf(end)).joinToString("\n").let(::markdownToHTML)
+            }
         }
 
         val changelog = project.changelog // local variable for configuration cache compatibility

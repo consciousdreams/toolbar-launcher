@@ -78,7 +78,7 @@ This is an IntelliJ IDEA plugin called **Toolbar Launcher** that adds fully conf
 
 ### Plugin description
 
-`pluginDescription.md` is the source of truth for the Marketplace description. `build.gradle.kts` converts it to HTML at build time using `org.commonmark:commonmark` (declared in `buildscript`). The JetBrains Marketplace only accepts a safe subset of HTML (no inline styles), so Markdown is the correct authoring format.
+`README.md` is the source of truth for the Marketplace description. The section between `<!-- Plugin description -->` and `<!-- Plugin description end -->` markers is extracted by `build.gradle.kts` and converted to HTML via `markdownToHTML` (from the `gradle-changelog-plugin`). The JetBrains Marketplace only accepts a safe subset of HTML (no inline styles), so Markdown is the correct authoring format.
 
 ### Compatibility
 
