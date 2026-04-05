@@ -74,14 +74,8 @@ public class ActionEditDialog extends DialogWrapper {
             ToolType t = (ToolType) typeCombo.getSelectedItem();
             if (t == null) return;
             updateCommandLabel(t);
-            boolean wasEmpty = goalsField.getText().trim().isEmpty();
-            // Pre-fill command field with template only when it is empty
-            if (wasEmpty && !t.template.isEmpty()) {
-                goalsField.setText(t.template);
-            }
-            if (wasEmpty) {
-                autoSelectIcon(t);
-            }
+            goalsField.setText(t.template);
+            autoSelectIcon(t);
         });
 
         setTitle(label == null ? "Add Action" : "Edit Action");
