@@ -4,6 +4,7 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.TextBrowseFolderListener;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.util.IconLoader;
@@ -127,8 +128,7 @@ public class ActionEditDialog extends DialogWrapper {
     private TextFieldWithBrowseButton buildCustomIconField(@Nullable String iconPath) {
         TextFieldWithBrowseButton field = new TextFieldWithBrowseButton();
         field.addBrowseFolderListener(
-                "Select SVG Icon", "Choose an SVG file to use as the button icon",
-                null, FileChooserDescriptorFactory.createSingleFileDescriptor("svg")
+                new TextBrowseFolderListener(FileChooserDescriptorFactory.createSingleFileDescriptor("svg"))
         );
         if (iconPath != null && !iconPath.startsWith("/icons/")) {
             field.setText(iconPath);
