@@ -11,6 +11,8 @@
     <applicationListeners>
         <listener class="it.consciousdreams.ActionsRegistrar"
                   topic="com.intellij.ide.AppLifecycleListener"/>
+        <listener class="it.consciousdreams.ActionsRegistrar"
+                  topic="com.intellij.ide.plugins.DynamicPluginListener"/>
     </applicationListeners>
 
     <extensions defaultExtensionNs="com.intellij">
