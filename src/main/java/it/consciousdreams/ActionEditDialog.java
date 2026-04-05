@@ -30,6 +30,7 @@ public class ActionEditDialog extends DialogWrapper {
     static final String         YARN_ICON_PATH     = "/icons/yarn.svg";
     static final String         MAKE_ICON_PATH     = "/icons/make.svg";
     static final String         SHELL_ICON_PATH    = "/icons/shell.svg";
+    static final String         DOCKER_ICON_PATH   = "/icons/docker.svg";
 
     static final List<String[]> AVAILABLE_ICONS    = List.of(
             new String[]{DEFAULT_ICON_PATH, "Maven (skip tests)"},
@@ -38,7 +39,8 @@ public class ActionEditDialog extends DialogWrapper {
             new String[]{NPM_ICON_PATH,     "npm"},
             new String[]{YARN_ICON_PATH,    "Yarn"},
             new String[]{MAKE_ICON_PATH,    "Make"},
-            new String[]{SHELL_ICON_PATH,   "Shell"}
+            new String[]{SHELL_ICON_PATH,   "Shell"},
+            new String[]{DOCKER_ICON_PATH,  "Docker"}
     );
 
     private final ComboBox<ToolType>         typeCombo;

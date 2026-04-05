@@ -10,7 +10,8 @@ public enum ToolType {
     NPM   ("npm",    "npm",    "npm run build",      ActionEditDialog.NPM_ICON_PATH),
     YARN  ("yarn",   "yarn",   "yarn build",         ActionEditDialog.YARN_ICON_PATH),
     MAKE  ("make",   "Make",   "make all",           ActionEditDialog.MAKE_ICON_PATH),
-    SHELL ("shell",  "Shell",  "",                   ActionEditDialog.SHELL_ICON_PATH);
+    SHELL ("shell",  "Shell",  "",                   ActionEditDialog.SHELL_ICON_PATH),
+    DOCKER("docker", "Docker", "docker compose up",  ActionEditDialog.DOCKER_ICON_PATH);
 
     public final String id;
     public final String displayName;
