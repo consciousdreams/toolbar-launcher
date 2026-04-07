@@ -20,6 +20,7 @@ import javax.swing.KeyStroke;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,26 +41,59 @@ public class ToolbarLauncherConfigurable implements Configurable {
     @Override
     public @Nullable JComponent createComponent() {
         tableModel = new ActionsTableModel();
-        table = new JBTable(tableModel) {
+        table = createTable();
+        configureColumns();
+
+        JPanel decoratedTable = ToolbarDecorator.createDecorator(table)
+                .setAddAction(button -> addAction())
+                .setRemoveAction(button -> removeAction())
+                .setEditAction(button -> editAction())
+                .createPanel();
+
+        mainPanel = new JPanel(new BorderLayout(0, 8));
+        mainPanel.add(new JLabel("Configure toolbar buttons:"), BorderLayout.NORTH);
+        mainPanel.add(decoratedTable, BorderLayout.CENTER);
+
+        subscribeToKeymapChanges();
+        reset();
+        return mainPanel;
+    }
+
+    private JBTable createTable() {
+        JBTable t = newTableWithTooltip();
+        t.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        t.setRowHeight(22);
+        t.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2 && e.getButton() == MouseEvent.BUTTON1) {
+                    int row = t.rowAtPoint(e.getPoint());
+                    if (row >= 0) {
+                        t.setRowSelectionInterval(row, row);
+                        editAction();
+                    }
+                }
+            }
+        });
+        return t;
+    }
+
+    private JBTable newTableWithTooltip() {
+        return new JBTable(tableModel) {
             @Override
             public String getToolTipText(@NotNull MouseEvent e) {
                 int col = columnAtPoint(e.getPoint());
                 if (col != 0) return super.getToolTipText(e);
                 int row = rowAtPoint(e.getPoint());
                 if (row < 0) return null;
-                boolean enabled = tableModel.getRow(row).isEnabled();
-                return enabled ? "Click to disable this button" : "Click to enable this button";
+                return tableModel.getRow(row).isEnabled() ? "Click to disable this button" : "Click to enable this button";
             }
         };
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setRowHeight(22);
+    }
 
-        // Enabled column (checkbox)
-        table.getColumnModel().getColumn(0).setMinWidth(28);
-        table.getColumnModel().getColumn(0).setMaxWidth(28);
-        // Icon column
-        table.getColumnModel().getColumn(1).setMinWidth(28);
-        table.getColumnModel().getColumn(1).setMaxWidth(28);
+    private void configureColumns() {
+        setColumnWidth(0, 28, 28, -1);
+        setColumnWidth(1, 28, 28, -1);
         table.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object value,
@@ -72,33 +106,25 @@ public class ToolbarLauncherConfigurable implements Configurable {
                 return label;
             }
         });
-        // Type column
-        table.getColumnModel().getColumn(2).setMinWidth(55);
-        table.getColumnModel().getColumn(2).setMaxWidth(55);
-        table.getColumnModel().getColumn(3).setPreferredWidth(160);
-        table.getColumnModel().getColumn(4).setPreferredWidth(230);
-        table.getColumnModel().getColumn(5).setPreferredWidth(100);
+        setColumnWidth(2, 55, 55, -1);
+        setColumnWidth(3, -1, -1, 160);
+        setColumnWidth(4, -1, -1, 230);
+        setColumnWidth(5, -1, -1, 100);
+    }
 
-        JPanel decoratedTable = ToolbarDecorator.createDecorator(table)
-                .setAddAction(button -> addAction())
-                .setRemoveAction(button -> removeAction())
-                .setEditAction(button -> editAction())
-                .createPanel();
+    private void setColumnWidth(int col, int min, int max, int preferred) {
+        var column = table.getColumnModel().getColumn(col);
+        if (min >= 0)       column.setMinWidth(min);
+        if (max >= 0)       column.setMaxWidth(max);
+        if (preferred >= 0) column.setPreferredWidth(preferred);
+    }
 
-        mainPanel = new JPanel(new BorderLayout(0, 8));
-        mainPanel.add(new JLabel("Configure toolbar buttons:"), BorderLayout.NORTH);
-        mainPanel.add(decoratedTable, BorderLayout.CENTER);
-
+    private void subscribeToKeymapChanges() {
         messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
             @Override
             public void shortcutsChanged(@NotNull Keymap keymap, @NotNull java.util.Collection<String> actionIds, boolean fromSettings) {
-                for (String id : actionIds) {
-                    if (id.startsWith(ActionsRegistrar.PREFIX)) {
-                        reset();
-                        break;
-                    }
-                }
+                if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX))) reset();
             }
 
             @Override
@@ -106,9 +132,6 @@ public class ToolbarLauncherConfigurable implements Configurable {
                 reset();
             }
         });
-
-        reset();
-        return mainPanel;
     }
 
     private void addAction() {
