@@ -1,7 +1,16 @@
 package it.consciousdreams;
 
+import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.actionSystem.Shortcut;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.keymap.Keymap;
+import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.keymap.KeymapManagerListener;
+import com.intellij.openapi.keymap.ex.KeymapManagerEx;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.util.messages.MessageBusConnection;
+import org.jetbrains.annotations.NotNull;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import org.jetbrains.annotations.Nls;
@@ -12,6 +21,7 @@ import javax.swing.KeyStroke;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,6 +31,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
     private JPanel mainPanel;
     private JBTable table;
     private ActionsTableModel tableModel;
+    private MessageBusConnection messageBusConnection;
 
     @Override
     public @Nls String getDisplayName() {
@@ -32,7 +43,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         tableModel = new ActionsTableModel();
         table = new JBTable(tableModel) {
             @Override
-            public String getToolTipText(java.awt.event.MouseEvent e) {
+            public String getToolTipText(@NotNull MouseEvent e) {
                 int col = columnAtPoint(e.getPoint());
                 if (col != 0) return super.getToolTipText(e);
                 int row = rowAtPoint(e.getPoint());
@@ -78,6 +89,24 @@ public class ToolbarLauncherConfigurable implements Configurable {
         mainPanel = new JPanel(new BorderLayout(0, 8));
         mainPanel.add(new JLabel("Configure toolbar buttons:"), BorderLayout.NORTH);
         mainPanel.add(decoratedTable, BorderLayout.CENTER);
+
+        messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
+            @Override
+            public void shortcutsChanged(@NotNull Keymap keymap, @NotNull java.util.Collection<String> actionIds, boolean fromSettings) {
+                for (String id : actionIds) {
+                    if (id.startsWith(ActionsRegistrar.PREFIX)) {
+                        reset();
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void activeKeymapChanged(@Nullable Keymap keymap) {
+                reset();
+            }
+        });
 
         reset();
         return mainPanel;
@@ -135,16 +164,39 @@ public class ToolbarLauncherConfigurable implements Configurable {
     public void apply() {
         ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows());
         ActionsRegistrar.sync();
+        // Re-set the active keymap to fire activeKeymapChanged, so the Keymap settings panel refreshes
+        KeymapManagerEx km = KeymapManagerEx.getInstanceEx();
+        km.setActiveKeymap(km.getActiveKeymap());
     }
 
     @Override
     public void reset() {
         if (tableModel == null) return;
-        tableModel.setRows(ToolbarLauncherSettings.getInstance().getActions());
+        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+        List<ActionConfig> copies = new ArrayList<>();
+        for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
+            ActionConfig copy = config.copy();
+            if (copy.isEnabled()) {
+                // Read the shortcut from the keymap — user may have changed it via Settings → Keymap
+                String actionId = ActionsRegistrar.PREFIX + copy.getId();
+                Shortcut[] shortcuts = keymap.getShortcuts(actionId);
+                if (shortcuts.length > 0 && shortcuts[shortcuts.length - 1] instanceof KeyboardShortcut kbs) {
+                    copy.setShortcut(kbs.getFirstKeyStroke().toString());
+                } else {
+                    copy.setShortcut(null);
+                }
+            }
+            copies.add(copy);
+        }
+        tableModel.setRows(copies);
     }
 
     @Override
     public void disposeUIResources() {
+        if (messageBusConnection != null) {
+            messageBusConnection.disconnect();
+            messageBusConnection = null;
+        }
         mainPanel  = null;
         table      = null;
         tableModel = null;
