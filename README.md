@@ -81,7 +81,7 @@ The project uses GitHub Actions for CI/CD.
 | `PRIVATE_KEY`          | Plugin signing private key                          |
 | `PRIVATE_KEY_PASSWORD` | Password for the private key                        |
 
-> To generate signing keys: `./gradlew signPlugin` (first time only, follow the prompts).
+> To generate signing keys, follow the instructions in [`cert/README.md`](cert/README.md).
 
 ## Manual Installation
 
