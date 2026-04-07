@@ -4,10 +4,15 @@ import com.intellij.ide.AppLifecycleListener;
 import com.intellij.ide.plugins.DynamicPluginListener;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.wm.WindowManager;
+
+import java.awt.Component;
+import java.awt.Container;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.KeyStroke;
@@ -75,6 +80,15 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                     applyShortcut(keymap, id, config.getShortcut());
                 }
             }
+        }
+        var frame = WindowManager.getInstance().getIdeFrame(null);
+        if (frame != null) updateToolbars(frame.getComponent());
+    }
+
+    private static void updateToolbars(Component component) {
+        if (component instanceof ActionToolbar toolbar) toolbar.updateActionsAsync();
+        if (component instanceof Container container) {
+            for (Component child : container.getComponents()) updateToolbars(child);
         }
     }
 
