@@ -6,7 +6,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.keymap.KeymapManagerListener;
-import com.intellij.openapi.keymap.ex.KeymapManagerEx;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.util.messages.MessageBusConnection;
@@ -164,9 +163,10 @@ public class ToolbarLauncherConfigurable implements Configurable {
     public void apply() {
         ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows());
         ActionsRegistrar.sync();
-        // Re-set the active keymap to fire activeKeymapChanged, so the Keymap settings panel refreshes
-        KeymapManagerEx km = KeymapManagerEx.getInstanceEx();
-        km.setActiveKeymap(km.getActiveKeymap());
+        // Fire activeKeymapChanged so the Keymap settings panel rebuilds its action tree
+        ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(KeymapManagerListener.TOPIC)
+                .activeKeymapChanged(KeymapManager.getInstance().getActiveKeymap());
     }
 
     @Override
@@ -178,17 +178,19 @@ public class ToolbarLauncherConfigurable implements Configurable {
             ActionConfig copy = config.copy();
             if (copy.isEnabled()) {
                 // Read the shortcut from the keymap — user may have changed it via Settings → Keymap
-                String actionId = ActionsRegistrar.PREFIX + copy.getId();
-                Shortcut[] shortcuts = keymap.getShortcuts(actionId);
-                if (shortcuts.length > 0 && shortcuts[shortcuts.length - 1] instanceof KeyboardShortcut kbs) {
-                    copy.setShortcut(kbs.getFirstKeyStroke().toString());
-                } else {
-                    copy.setShortcut(null);
-                }
+                copy.setShortcut(lastKeyboardShortcut(keymap.getShortcuts(ActionsRegistrar.PREFIX + copy.getId())));
             }
             copies.add(copy);
         }
         tableModel.setRows(copies);
+    }
+
+    private static @Nullable String lastKeyboardShortcut(Shortcut[] shortcuts) {
+        KeyboardShortcut last = null;
+        for (Shortcut s : shortcuts) {
+            if (s.isKeyboard()) last = (KeyboardShortcut) s;
+        }
+        return last != null ? last.getFirstKeyStroke().toString() : null;
     }
 
     @Override

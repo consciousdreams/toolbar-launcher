@@ -49,16 +49,17 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                 .map(c -> PREFIX + c.getId())
                 .collect(Collectors.toSet());
 
-        // Unregister actions no longer in settings
+        // Unregister actions no longer in settings and remove their shortcuts from the keymap
+        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         Set<String> toRemove = new HashSet<>(registeredIds);
         toRemove.removeAll(expectedIds);
         for (String id : toRemove) {
+            keymap.removeAllActionShortcuts(id);
             am.unregisterAction(id);
             registeredIds.remove(id);
         }
 
         // Register or refresh each enabled action
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         for (ActionConfig config : configs) {
             if (config.isEnabled()) {
                 String id = PREFIX + config.getId();
