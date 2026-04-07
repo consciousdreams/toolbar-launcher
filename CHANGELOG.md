@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Double-click on a row in the settings table opens the edit dialog
+
+### Fixed
+
+- Action template presentation text was missing, causing a WARN in the Keymap settings panel
+
+### Changed
+
+- Keyboard shortcut changes made via **Settings → Keymap** are now reflected immediately in the Toolbar Launcher settings panel
+- Toolbar buttons update asynchronously after dynamic plugin actions are registered on startup
+- GitHub Actions bumped to latest versions (checkout v6, setup-java v5, setup-gradle v5, upload-artifact v6)
+
 ## [1.0.1]
 
 ### Added
