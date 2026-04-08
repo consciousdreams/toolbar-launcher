@@ -1,9 +1,14 @@
 # Toolbar Launcher
+
+[![JetBrains Plugin](https://img.shields.io/jetbrains/plugin/v/31098-toolbar-launcher)](https://plugins.jetbrains.com/plugin/31098-toolbar-launcher)
+
+[**Install from JetBrains Marketplace**](https://plugins.jetbrains.com/plugin/31098-toolbar-launcher)
+
 <!-- Plugin description -->
 One-click toolbar buttons to run any build command — fully customizable.
 
 **Toolbar Launcher** adds configurable toolbar buttons to IntelliJ IDEA for running Maven, Gradle, npm,
-shell scripts and more — no need to open tool windows or configure run configurations every time.
+shell, scripts, and more — no need to open tool windows or configure run configurations every time.
 
 ## Features
 
@@ -21,18 +26,19 @@ shell scripts and more — no need to open tool windows or configure run configu
 
 ## Default Buttons
 
-| Button | Shortcut (Mac) | Shortcut (Win/Linux) | Command |
-|--------|----------------|----------------------|---------|
-| Maven Clean Install (skip tests) | `Cmd+Option+S` | `Ctrl+Alt+S` | `mvn clean install -Dmaven.test.skip=true` |
-| Maven Clean Install | `Cmd+Option+M` | `Ctrl+Alt+M` | `mvn clean install` |
+| Button                           | Shortcut (Mac) | Shortcut (Win/Linux) | Command                                    |
+|----------------------------------|----------------|----------------------|--------------------------------------------|
+| Maven Clean Install (skip tests) | `Cmd+Option+S` | `Ctrl+Alt+S`         | `mvn clean install -Dmaven.test.skip=true` |
+| Maven Clean Install              | `Cmd+Option+M` | `Ctrl+Alt+M`         | `mvn clean install`                        |
 
 ## Configuration
 
 Open **Settings → Tools → Toolbar Launcher** to manage your buttons:
 
 - **Add** — set a label, command type, command string, icon, and optional keyboard shortcut
-- **Edit** — update any field of an existing button
+- **Edit** — update any field of an existing button (or double-click a row)
 - **Remove** — delete a button from the toolbar
+- **Reorder** — use the Move Up / Move Down arrows to change the button order
 - **Enable / Disable** — toggle the checkbox in the table to hide/show a button without removing it
 - **Type** — choose from Maven, Gradle, npm, yarn, Make, or Shell; pre-fills a command template and suggests a matching icon when the command field is empty
 - **Custom SVG** — browse your filesystem to use any SVG file as a button icon
@@ -69,14 +75,14 @@ The project uses GitHub Actions for CI/CD.
 
 ### Required secrets (GitHub → Settings → Secrets)
 
-| Secret | Description |
-|---|---|
-| `PUBLISH_TOKEN` | JetBrains Marketplace token (your profile → Tokens) |
-| `CERTIFICATE_CHAIN` | Plugin signing certificate chain |
-| `PRIVATE_KEY` | Plugin signing private key |
-| `PRIVATE_KEY_PASSWORD` | Password for the private key |
+| Secret                 | Description                                         |
+|------------------------|-----------------------------------------------------|
+| `PUBLISH_TOKEN`        | JetBrains Marketplace token (your profile → Tokens) |
+| `CERTIFICATE_CHAIN`    | Plugin signing certificate chain                    |
+| `PRIVATE_KEY`          | Plugin signing private key                          |
+| `PRIVATE_KEY_PASSWORD` | Password for the private key                        |
 
-> To generate signing keys: `./gradlew signPlugin` (first time only, follow the prompts).
+> To generate signing keys, follow the instructions in [`cert/README.md`](cert/README.md).
 
 ## Manual Installation
 

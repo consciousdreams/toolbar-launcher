@@ -17,6 +17,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="it.consciousdreams.ToolbarLauncherSettings"/>
+        <keymapExtension implementation="it.consciousdreams.ToolbarLauncherKeymapExtension"/>
         <applicationConfigurable
             parentId="tools"
             instance="it.consciousdreams.ToolbarLauncherConfigurable"
