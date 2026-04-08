@@ -36,8 +36,9 @@ shell, scripts, and more — no need to open tool windows or configure run confi
 Open **Settings → Tools → Toolbar Launcher** to manage your buttons:
 
 - **Add** — set a label, command type, command string, icon, and optional keyboard shortcut
-- **Edit** — update any field of an existing button
+- **Edit** — update any field of an existing button (or double-click a row)
 - **Remove** — delete a button from the toolbar
+- **Reorder** — use the Move Up / Move Down arrows to change the button order
 - **Enable / Disable** — toggle the checkbox in the table to hide/show a button without removing it
 - **Type** — choose from Maven, Gradle, npm, yarn, Make, or Shell; pre-fills a command template and suggests a matching icon when the command field is empty
 - **Custom SVG** — browse your filesystem to use any SVG file as a button icon

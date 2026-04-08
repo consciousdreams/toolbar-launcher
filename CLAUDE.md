@@ -45,6 +45,8 @@ This is an IntelliJ IDEA plugin called **Toolbar Launcher** that adds fully conf
 
 `ToolbarLauncherConfigurable.apply()` also calls `sync()` so toolbar and shortcuts update immediately without restarting.
 
+On startup, `ActionsRegistrar` also subscribes to `CustomActionsListener`. When the user removes one of our buttons via the IDE's **Customize Toolbar** context menu, `handleToolbarCustomization()` detects the `DELETED` entry in `CustomActionsSchema`, marks the corresponding `ActionConfig` as disabled, removes the stale schema entry (so re-enabling from settings re-adds it correctly), and calls `sync()`. A re-entry guard (`handlingCustomization`) prevents infinite loops when modifying the schema from inside the listener.
+
 ### Toolbar rendering
 
 `ToolbarLauncherActionGroup` (registered in `plugin.xml` with `popup="false"`) looks up action instances from `ActionManager` in `getChildren()`. Only **enabled** configs are included. This ensures stable instances are returned on every toolbar refresh — critical for tooltip stability.
@@ -67,7 +69,7 @@ This is an IntelliJ IDEA plugin called **Toolbar Launcher** that adds fully conf
 
 ### Settings UI
 
-`ToolbarLauncherConfigurable` (Settings → Tools → Toolbar Launcher) shows a `JBTable` with enabled/icon/type/label/command/shortcut columns and `ToolbarDecorator` for Add/Edit/Remove. The **Enabled** column is a checkbox editable directly in the table without opening the edit dialog.
+`ToolbarLauncherConfigurable` (Settings → Tools → Toolbar Launcher) shows a `JBTable` with enabled/icon/type/label/command/shortcut columns and `ToolbarDecorator` for Add/Edit/Remove/Move Up/Move Down. The **Enabled** column is a checkbox editable directly in the table without opening the edit dialog. Double-clicking a row opens the edit dialog. Move Up / Move Down reorder rows and keep the selection in sync.
 
 `ActionEditDialog` fields:
 - **Type** — `ComboBox<ToolType>` (Maven, Gradle, npm, yarn, Make, Shell); pre-fills command with `ToolType.template` and auto-suggests the matching built-in icon when the goals field is empty

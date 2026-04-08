@@ -5,6 +5,8 @@
 ### Added
 
 - Double-click on a row in the settings table opens the edit dialog
+- Move Up / Move Down buttons in the settings table to reorder toolbar buttons
+- Removing a button via the IDE's **Customize Toolbar** context menu now automatically disables it in Toolbar Launcher settings; the schema entry is also cleaned up so re-enabling it from settings works correctly
 
 ### Fixed
 
