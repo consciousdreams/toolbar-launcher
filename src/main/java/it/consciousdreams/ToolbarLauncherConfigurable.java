@@ -48,6 +48,8 @@ public class ToolbarLauncherConfigurable implements Configurable {
                 .setAddAction(button -> addAction())
                 .setRemoveAction(button -> removeAction())
                 .setEditAction(button -> editAction())
+                .setMoveUpAction(button -> moveRow(-1))
+                .setMoveDownAction(button -> moveRow(1))
                 .createPanel();
 
         mainPanel = new JPanel(new BorderLayout(0, 8));
@@ -170,6 +172,15 @@ public class ToolbarLauncherConfigurable implements Configurable {
         if (row >= 0) tableModel.removeRow(row);
     }
 
+    private void moveRow(int delta) {
+        int row = table.getSelectedRow();
+        if (row < 0) return;
+        int target = row + delta;
+        if (target < 0 || target >= tableModel.getRowCount()) return;
+        tableModel.moveRow(row, target);
+        table.setRowSelectionInterval(target, target);
+    }
+
     @Override
     public boolean isModified() {
         if (tableModel == null) return false;
@@ -247,6 +258,12 @@ public class ToolbarLauncherConfigurable implements Configurable {
         void removeRow(int i) {
             rows.remove(i);
             fireTableRowsDeleted(i, i);
+        }
+
+        void moveRow(int from, int to) {
+            ActionConfig row = rows.remove(from);
+            rows.add(to, row);
+            fireTableDataChanged();
         }
 
         @Override public int getRowCount()    { return rows.size(); }
