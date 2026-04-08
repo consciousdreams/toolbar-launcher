@@ -3,7 +3,6 @@ package it.consciousdreams;
 import com.intellij.ide.AppLifecycleListener;
 import com.intellij.ide.plugins.DynamicPluginListener;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.ui.customization.ActionUrl;
 import com.intellij.ide.ui.customization.CustomActionsListener;
 import com.intellij.ide.ui.customization.CustomActionsSchema;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -20,11 +19,12 @@ import java.awt.Container;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.KeyStroke;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.jdom.Element;
 
 public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginListener {
 
@@ -114,52 +114,63 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
 
     /**
      * Called when the user modifies the toolbar via "Customize Toolbar".
-     * If any of our actions were removed, disable them in our settings and
-     * clean up the schema entry so re-enabling from our settings works later.
+     * Reads the schema XML via the public {@link CustomActionsSchema#getState()} API
+     * to detect DELETED entries for our actions, disables the corresponding configs,
+     * removes the stale entries via {@link CustomActionsSchema#loadState}, and syncs.
      */
     private static void handleToolbarCustomization() {
         if (handlingCustomization) return;
         handlingCustomization = true;
         try {
             CustomActionsSchema schema = CustomActionsSchema.getInstance();
-            List<ActionUrl> urls = schema.getActions();
+            Element state = schema.getState();
+            if (state == null) return;
+
+            List<Element> groups = state.getChildren("group");
 
             // Collect our action IDs that have ADDED entries (i.e. moved, not truly removed)
             Set<String> addedIds = new HashSet<>();
-            for (ActionUrl url : urls) {
-                if (url.getActionType() == ActionUrl.ADDED
-                        && url.getComponent() instanceof String id
-                        && id.startsWith(PREFIX)) {
-                    addedIds.add(id);
+            for (Element group : groups) {
+                if ("1".equals(group.getAttributeValue("action_type"))) {
+                    String value = group.getAttributeValue("value");
+                    if (value != null && value.startsWith(PREFIX)) {
+                        addedIds.add(value);
+                    }
                 }
             }
 
             List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
             boolean changed = false;
-            List<ActionUrl> toRemove = new ArrayList<>();
+            Set<String> removedIds = new HashSet<>();
 
-            for (ActionUrl url : urls) {
-                if (url.getActionType() != ActionUrl.DELETED) continue;
-                Object component = url.getComponent();
-                if (!(component instanceof String actionId)) continue;
-                if (!actionId.startsWith(PREFIX)) continue;
+            for (Element group : groups) {
+                if (!"-1".equals(group.getAttributeValue("action_type"))) continue;
+                String value = group.getAttributeValue("value");
+                if (value == null || !value.startsWith(PREFIX)) continue;
                 // DELETED + ADDED for the same ID means a move, not a removal
-                if (addedIds.contains(actionId)) continue;
+                if (addedIds.contains(value)) continue;
 
                 for (ActionConfig config : configs) {
-                    if ((PREFIX + config.getId()).equals(actionId) && config.isEnabled()) {
+                    if ((PREFIX + config.getId()).equals(value) && config.isEnabled()) {
                         config.setEnabled(false);
                         changed = true;
-                        toRemove.add(url);
+                        removedIds.add(value);
                     }
                 }
             }
 
             if (changed) {
-                // Remove DELETED entries from schema so re-enabling from our settings works
-                List<ActionUrl> updatedUrls = new ArrayList<>(urls);
-                updatedUrls.removeAll(toRemove);
-                schema.setActions(updatedUrls);
+                // Rebuild state without our DELETED entries so re-enabling works
+                Element newState = new Element(state.getName());
+                for (Element child : state.getChildren()) {
+                    boolean isOurDeletedEntry = "group".equals(child.getName())
+                            && "-1".equals(child.getAttributeValue("action_type"))
+                            && removedIds.contains(child.getAttributeValue("value"));
+                    if (!isOurDeletedEntry) {
+                        newState.addContent(child.clone());
+                    }
+                }
+                schema.loadState(newState);
 
                 sync();
             }
