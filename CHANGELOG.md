@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-04-08
+
 ### Added
 
 - Double-click on a row in the settings table opens the edit dialog
@@ -18,7 +20,7 @@
 - Toolbar buttons update asynchronously after dynamic plugin actions are registered on startup
 - GitHub Actions bumped to latest versions (checkout v6, setup-java v5, setup-gradle v5, upload-artifact v6)
 
-## [1.0.1]
+## [1.0.1] - 2026-04-05
 
 ### Added
 
@@ -30,7 +32,7 @@
 - Selecting a different command type now always updates the command and icon
 - Plugin Marketplace description is now sourced from README.md
 
-## [1.0.0]
+## [1.0.0] - 2026-04-05
 
 ### Added
 
@@ -42,6 +44,7 @@
 - Plugin icon displayed in Marketplace and Settings → Plugins
 - GitHub Actions CI/CD workflows for automated build, verification, signing, and Marketplace publishing
 
-[Unreleased]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.2...HEAD
+[1.0.2]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.0...1.0.1
 [1.0.0]: https://github.com/consciousdreams/toolbar-launcher/commits/1.0.0
