@@ -31,6 +31,12 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
     static final String PREFIX = "it.consciousdreams.toolbarlauncher.";
     private static final String PLUGIN_ID = "it.consciousdreams.toolbar-launcher";
 
+    private static final String ACTION_TYPE = "action_type";
+    private static final String GROUP = "group";
+    private static final String VALUE = "value";
+    private static final String ACTION_TYPE_ADD = "1";
+    private static final String ACTION_TYPE_REMOVE = "-1";
+
     /** Tracks IDs we have registered so we can unregister without querying ActionManager by prefix. */
     private static final Set<String> registeredIds = new HashSet<>();
 
@@ -124,15 +130,14 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
         try {
             CustomActionsSchema schema = CustomActionsSchema.getInstance();
             Element state = schema.getState();
-            if (state == null) return;
 
-            List<Element> groups = state.getChildren("group");
+            List<Element> groups = state.getChildren(GROUP);
 
             // Collect our action IDs that have ADDED entries (i.e. moved, not truly removed)
             Set<String> addedIds = new HashSet<>();
             for (Element group : groups) {
-                if ("1".equals(group.getAttributeValue("action_type"))) {
-                    String value = group.getAttributeValue("value");
+                if (ACTION_TYPE_ADD.equals(group.getAttributeValue(ACTION_TYPE))) {
+                    String value = group.getAttributeValue(VALUE);
                     if (value != null && value.startsWith(PREFIX)) {
                         addedIds.add(value);
                     }
@@ -144,8 +149,8 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             Set<String> removedIds = new HashSet<>();
 
             for (Element group : groups) {
-                if (!"-1".equals(group.getAttributeValue("action_type"))) continue;
-                String value = group.getAttributeValue("value");
+                if (!ACTION_TYPE_REMOVE.equals(group.getAttributeValue(ACTION_TYPE))) continue;
+                String value = group.getAttributeValue(VALUE);
                 if (value == null || !value.startsWith(PREFIX)) continue;
                 // DELETED + ADDED for the same ID means a move, not a removal
                 if (addedIds.contains(value)) continue;
@@ -163,9 +168,9 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                 // Rebuild state without our DELETED entries so re-enabling works
                 Element newState = new Element(state.getName());
                 for (Element child : state.getChildren()) {
-                    boolean isOurDeletedEntry = "group".equals(child.getName())
-                            && "-1".equals(child.getAttributeValue("action_type"))
-                            && removedIds.contains(child.getAttributeValue("value"));
+                    boolean isOurDeletedEntry = GROUP.equals(child.getName())
+                            && ACTION_TYPE_REMOVE.equals(child.getAttributeValue(ACTION_TYPE))
+                            && removedIds.contains(child.getAttributeValue(VALUE));
                     if (!isOurDeletedEntry) {
                         newState.addContent(child.clone());
                     }
