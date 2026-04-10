@@ -125,14 +125,30 @@ public class ToolbarLauncherConfigurable implements Configurable {
         messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
             @Override
             public void shortcutsChanged(@NotNull Keymap keymap, @NotNull java.util.Collection<String> actionIds, boolean fromSettings) {
-                if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX))) reset();
+                if (ActionsRegistrar.syncing) return;
+                if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX))) {
+                    syncShortcutsFromKeymap(keymap);
+                }
             }
 
             @Override
             public void activeKeymapChanged(@Nullable Keymap keymap) {
-                reset();
+                if (ActionsRegistrar.syncing) return;
+                if (keymap != null) {
+                    syncShortcutsFromKeymap(keymap);
+                }
             }
         });
+    }
+
+    private void syncShortcutsFromKeymap(Keymap keymap) {
+        for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
+            if (config.isEnabled()) {
+                String id = ActionsRegistrar.PREFIX + config.getId();
+                config.setShortcut(lastKeyboardShortcut(keymap.getShortcuts(id)));
+            }
+        }
+        reset();
     }
 
     private void addAction() {
@@ -205,15 +221,9 @@ public class ToolbarLauncherConfigurable implements Configurable {
     @Override
     public void reset() {
         if (tableModel == null) return;
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         List<ActionConfig> copies = new ArrayList<>();
         for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
-            ActionConfig copy = config.copy();
-            if (copy.isEnabled()) {
-                // Read the shortcut from the keymap — user may have changed it via Settings → Keymap
-                copy.setShortcut(lastKeyboardShortcut(keymap.getShortcuts(ActionsRegistrar.PREFIX + copy.getId())));
-            }
-            copies.add(copy);
+            copies.add(config.copy());
         }
         tableModel.setRows(copies);
     }

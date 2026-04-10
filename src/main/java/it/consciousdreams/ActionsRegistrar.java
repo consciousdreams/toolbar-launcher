@@ -43,6 +43,9 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
     /** Guards against re-entry when we modify the schema from inside the listener. */
     private static boolean handlingCustomization = false;
 
+    /** True while sync() is modifying the keymap — lets listeners ignore our own changes. */
+    static boolean syncing = false;
+
     @Override
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
@@ -61,43 +64,48 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
      * Safe to call multiple times (idempotent for unchanged actions).
      */
     static void sync() {
-        ActionManager am = ActionManager.getInstance();
-        List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
+        syncing = true;
+        try {
+            ActionManager am = ActionManager.getInstance();
+            List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
 
-        Set<String> expectedIds = configs.stream()
-                .filter(ActionConfig::isEnabled)
-                .map(c -> PREFIX + c.getId())
-                .collect(Collectors.toSet());
+            Set<String> expectedIds = configs.stream()
+                    .filter(ActionConfig::isEnabled)
+                    .map(c -> PREFIX + c.getId())
+                    .collect(Collectors.toSet());
 
-        // Unregister actions no longer in settings and remove their shortcuts from the keymap
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
-        Set<String> toRemove = new HashSet<>(registeredIds);
-        toRemove.removeAll(expectedIds);
-        for (String id : toRemove) {
-            keymap.removeAllActionShortcuts(id);
-            am.unregisterAction(id);
-            registeredIds.remove(id);
-        }
+            // Unregister actions no longer in settings and remove their shortcuts from the keymap
+            Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+            Set<String> toRemove = new HashSet<>(registeredIds);
+            toRemove.removeAll(expectedIds);
+            for (String id : toRemove) {
+                keymap.removeAllActionShortcuts(id);
+                am.unregisterAction(id);
+                registeredIds.remove(id);
+            }
 
-        // Register or refresh each enabled action
-        for (ActionConfig config : configs) {
-            if (config.isEnabled()) {
-                String id = PREFIX + config.getId();
-                AnAction existing = am.getAction(id);
-                if (existing instanceof ToolbarAction ta && ta.getConfig().equals(config)) {
-                    registeredIds.add(id);
-                } else {
-                    if (existing != null) {
-                        am.unregisterAction(id);
+            // Register or refresh each enabled action
+            for (ActionConfig config : configs) {
+                if (config.isEnabled()) {
+                    String id = PREFIX + config.getId();
+                    AnAction existing = am.getAction(id);
+                    if (existing instanceof ToolbarAction ta && ta.getConfig().equals(config)) {
+                        registeredIds.add(id);
+                    } else {
+                        if (existing != null) {
+                            am.unregisterAction(id);
+                        }
+                        am.registerAction(id, new ToolbarAction(config));
+                        registeredIds.add(id);
                     }
-                    am.registerAction(id, new ToolbarAction(config));
-                    registeredIds.add(id);
                     applyShortcut(keymap, id, config.getShortcut());
                 }
             }
+            var frame = WindowManager.getInstance().getIdeFrame(null);
+            if (frame != null) updateToolbars(frame.getComponent());
+        } finally {
+            syncing = false;
         }
-        var frame = WindowManager.getInstance().getIdeFrame(null);
-        if (frame != null) updateToolbars(frame.getComponent());
     }
 
     private static void updateToolbars(Component component) {
