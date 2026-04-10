@@ -31,7 +31,6 @@ public final class ToolbarLauncherSettings implements PersistentStateComponent<T
 
     private static State createDefaultState() {
         State s = new State();
-        String modifier = ToolbarAction.isMac() ? "meta alt" : "ctrl alt";
 
         ActionConfig skipTests = new ActionConfig(
                 UUID.randomUUID().toString(),
@@ -39,7 +38,6 @@ public final class ToolbarLauncherSettings implements PersistentStateComponent<T
                 "clean install -Dmaven.test.skip=true",
                 ActionEditDialog.DEFAULT_ICON_PATH
         );
-        skipTests.setShortcut(modifier + " pressed S");
         s.getActions().add(skipTests);
 
         ActionConfig withTests = new ActionConfig(
@@ -48,7 +46,6 @@ public final class ToolbarLauncherSettings implements PersistentStateComponent<T
                 "clean install",
                 ActionEditDialog.TESTS_ICON_PATH
         );
-        withTests.setShortcut(modifier + " pressed M");
         s.getActions().add(withTests);
 
         return s;

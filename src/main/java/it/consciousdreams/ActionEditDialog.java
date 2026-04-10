@@ -1,7 +1,6 @@
 package it.consciousdreams;
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
-import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextBrowseFolderListener;
@@ -14,12 +13,8 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.List;
-
-import static java.awt.event.KeyEvent.*;
 
 public class ActionEditDialog extends DialogWrapper {
 
@@ -49,11 +44,9 @@ public class ActionEditDialog extends DialogWrapper {
     private final JTextField                 goalsField;
     private final ComboBox<String[]>         iconCombo;
     private final TextFieldWithBrowseButton  customIconField;
-    private final JTextField                 shortcutField;
-    private KeyStroke                        capturedKeystroke;
 
     public ActionEditDialog(@Nullable String label, @Nullable String goals,
-                            @Nullable String iconPath, @Nullable String shortcut,
+                            @Nullable String iconPath,
                             @Nullable String commandType) {
         super(true);
         typeCombo       = new ComboBox<>(ToolType.values());
@@ -62,7 +55,6 @@ public class ActionEditDialog extends DialogWrapper {
         goalsField      = new JTextField(goals != null ? goals : "", 30);
         iconCombo       = buildIconCombo(iconPath);
         customIconField = buildCustomIconField(iconPath);
-        shortcutField   = buildShortcutField(shortcut);
 
         // Pre-select type
         ToolType selected = ToolType.fromId(commandType);
@@ -132,41 +124,6 @@ public class ActionEditDialog extends DialogWrapper {
         return field;
     }
 
-    // ── Shortcut field ────────────────────────────────────────────────────────
-
-    private JTextField buildShortcutField(@Nullable String shortcut) {
-        JTextField field = new JTextField(22);
-        field.setEditable(false);
-        field.setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
-
-        if (shortcut != null && !shortcut.isEmpty()) {
-            KeyStroke ks = KeyStroke.getKeyStroke(shortcut);
-            if (ks != null) {
-                capturedKeystroke = ks;
-                field.setText(KeymapUtil.getKeystrokeText(ks));
-            }
-        }
-
-        field.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                int code = e.getKeyCode();
-                if (code == VK_SHIFT || code == VK_CONTROL || code == VK_ALT
-                        || code == VK_META || code == VK_UNDEFINED) return;
-                if (code == VK_ESCAPE && e.getModifiersEx() == 0) {
-                    capturedKeystroke = null;
-                    field.setText("");
-                    e.consume();
-                    return;
-                }
-                capturedKeystroke = KeyStroke.getKeyStrokeForEvent(e);
-                field.setText(KeymapUtil.getKeystrokeText(capturedKeystroke));
-                e.consume();
-            }
-        });
-        return field;
-    }
-
     // ── Layout ────────────────────────────────────────────────────────────────
 
     @Override
@@ -189,25 +146,9 @@ public class ActionEditDialog extends DialogWrapper {
         addRow(panel, gbc, 3, "Built-in icon:", iconCombo,        false);
         addRow(panel, gbc, 4, "Custom SVG:",    customIconField,  true);
 
-        // Shortcut row
-        gbc.gridx = 0; gbc.gridy = 5; gbc.fill = GridBagConstraints.NONE;
-        panel.add(new JLabel("Shortcut:"), gbc);
-        JPanel shortcutRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        shortcutRow.add(shortcutField);
-        JButton clearBtn = new JButton("Clear");
-        clearBtn.addActionListener(ev -> {
-            capturedKeystroke = null;
-            shortcutField.setText("");
-            shortcutField.requestFocusInWindow();
-        });
-        shortcutRow.add(clearBtn);
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
-        panel.add(shortcutRow, gbc);
-
-        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE;
         panel.add(new JLabel("<html><small>" +
                 "Shell command runs via your login shell in the project root.<br>" +
-                "Click the Shortcut field and press a key combination. Esc = clear.<br>" +
                 "Custom SVG overrides built-in icon when set." +
                 "</small></html>"), gbc);
 
@@ -259,7 +200,4 @@ public class ActionEditDialog extends DialogWrapper {
         return selected instanceof String[] s ? s[0] : DEFAULT_ICON_PATH;
     }
 
-    public @Nullable String getShortcut() {
-        return capturedKeystroke != null ? capturedKeystroke.toString() : null;
-    }
 }

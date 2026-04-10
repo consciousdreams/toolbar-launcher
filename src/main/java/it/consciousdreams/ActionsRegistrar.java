@@ -8,9 +8,6 @@ import com.intellij.ide.ui.customization.CustomActionsSchema;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.KeyboardShortcut;
-import com.intellij.openapi.keymap.Keymap;
-import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.WindowManager;
 
@@ -18,7 +15,6 @@ import java.awt.Component;
 import java.awt.Container;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.KeyStroke;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -69,12 +65,10 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                 .map(c -> PREFIX + c.getId())
                 .collect(Collectors.toSet());
 
-        // Unregister actions no longer in settings and remove their shortcuts from the keymap
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+        // Unregister actions no longer in settings
         Set<String> toRemove = new HashSet<>(registeredIds);
         toRemove.removeAll(expectedIds);
         for (String id : toRemove) {
-            keymap.removeAllActionShortcuts(id);
             am.unregisterAction(id);
             registeredIds.remove(id);
         }
@@ -92,7 +86,6 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                     }
                     am.registerAction(id, new ToolbarAction(config));
                     registeredIds.add(id);
-                    applyShortcut(keymap, id, config.getShortcut());
                 }
             }
         }
@@ -104,17 +97,6 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
         if (component instanceof ActionToolbar toolbar) toolbar.updateActionsAsync();
         if (component instanceof Container container) {
             for (Component child : container.getComponents()) updateToolbars(child);
-        }
-    }
-
-    private static void applyShortcut(Keymap keymap, String actionId,
-                                      @org.jetbrains.annotations.Nullable String shortcut) {
-        keymap.removeAllActionShortcuts(actionId);
-        if (shortcut != null && !shortcut.isEmpty()) {
-            KeyStroke ks = KeyStroke.getKeyStroke(shortcut);
-            if (ks != null) {
-                keymap.addShortcut(actionId, new KeyboardShortcut(ks, null));
-            }
         }
     }
 

@@ -7,7 +7,6 @@ public class ActionConfig {
     private String  label;
     private String  goals;
     private String  iconPath    = ActionEditDialog.DEFAULT_ICON_PATH;
-    private String  shortcut;
     private String  commandType = "maven";
     private boolean enabled     = true;
 
@@ -34,9 +33,6 @@ public class ActionConfig {
     public String  getIconPath()                { return iconPath; }
     public void    setIconPath(String iconPath) { this.iconPath = iconPath; }
 
-    public String  getShortcut()                { return shortcut; }
-    public void    setShortcut(String shortcut) { this.shortcut = shortcut; }
-
     public String  getCommandType()                   { return commandType; }
     public void    setCommandType(String commandType) { this.commandType = commandType; }
 
@@ -51,7 +47,6 @@ public class ActionConfig {
 
     public ActionConfig copy() {
         ActionConfig c = new ActionConfig(id, label, goals, iconPath);
-        c.shortcut    = shortcut;
         c.commandType = commandType;
         c.enabled     = enabled;
         return c;
@@ -66,12 +61,11 @@ public class ActionConfig {
                 && Objects.equals(label, that.label)
                 && Objects.equals(goals, that.goals)
                 && Objects.equals(iconPath, that.iconPath)
-                && Objects.equals(shortcut, that.shortcut)
                 && Objects.equals(commandType, that.commandType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, label, goals, iconPath, shortcut, commandType, enabled);
+        return Objects.hash(id, label, goals, iconPath, commandType, enabled);
     }
 }
