@@ -1,6 +1,14 @@
 package it.consciousdreams;
 
+import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.actionSystem.Shortcut;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.keymap.Keymap;
+import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.keymap.KeymapManagerListener;
+import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
@@ -22,6 +30,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
     private JPanel mainPanel;
     private JBTable table;
     private ActionsTableModel tableModel;
+    private MessageBusConnection messageBusConnection;
 
     @Override
     public @Nls String getDisplayName() {
@@ -46,6 +55,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         mainPanel.add(new JLabel("Configure toolbar buttons:"), BorderLayout.NORTH);
         mainPanel.add(decoratedTable, BorderLayout.CENTER);
 
+        subscribeToKeymapChanges();
         reset();
         return mainPanel;
     }
@@ -100,6 +110,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         setColumnWidth(2, 55, 55, -1);
         setColumnWidth(3, -1, -1, 160);
         setColumnWidth(4, -1, -1, 230);
+        setColumnWidth(5, -1, -1, 100);
     }
 
     private void setColumnWidth(int col, int min, int max, int preferred) {
@@ -109,8 +120,23 @@ public class ToolbarLauncherConfigurable implements Configurable {
         if (preferred >= 0) column.setPreferredWidth(preferred);
     }
 
+    private void subscribeToKeymapChanges() {
+        messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+        messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
+            @Override
+            public void shortcutsChanged(@NotNull Keymap keymap, @NotNull java.util.Collection<String> actionIds, boolean fromSettings) {
+                if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX))) reset();
+            }
+
+            @Override
+            public void activeKeymapChanged(@Nullable Keymap keymap) {
+                reset();
+            }
+        });
+    }
+
     private void addAction() {
-        ActionEditDialog dialog = new ActionEditDialog(null, null, null, null);
+        ActionEditDialog dialog = new ActionEditDialog(null, null, null, null, null);
         if (dialog.showAndGet()) {
             ActionConfig config = new ActionConfig(
                     UUID.randomUUID().toString(),
@@ -118,6 +144,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
                     dialog.getGoals(),
                     dialog.getIconPath()
             );
+            config.setShortcut(dialog.getShortcut());
             config.setCommandType(dialog.getCommandType());
             tableModel.addRow(config);
         }
@@ -128,11 +155,12 @@ public class ToolbarLauncherConfigurable implements Configurable {
         if (row < 0) return;
         ActionConfig config = tableModel.getRow(row);
         ActionEditDialog dialog = new ActionEditDialog(
-                config.getLabel(), config.getGoals(), config.getIconPath(), config.getCommandType());
+                config.getLabel(), config.getGoals(), config.getIconPath(), config.getShortcut(), config.getCommandType());
         if (dialog.showAndGet()) {
             config.setLabel(dialog.getLabel());
             config.setGoals(dialog.getGoals());
             config.setIconPath(dialog.getIconPath());
+            config.setShortcut(dialog.getShortcut());
             config.setCommandType(dialog.getCommandType());
             tableModel.fireTableRowsUpdated(row, row);
         }
@@ -168,20 +196,42 @@ public class ToolbarLauncherConfigurable implements Configurable {
     public void apply() {
         ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows());
         ActionsRegistrar.sync();
+        // Fire activeKeymapChanged so the Keymap settings panel rebuilds its action tree
+        ApplicationManager.getApplication().getMessageBus()
+                .syncPublisher(KeymapManagerListener.TOPIC)
+                .activeKeymapChanged(KeymapManager.getInstance().getActiveKeymap());
     }
 
     @Override
     public void reset() {
         if (tableModel == null) return;
+        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         List<ActionConfig> copies = new ArrayList<>();
         for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
-            copies.add(config.copy());
+            ActionConfig copy = config.copy();
+            if (copy.isEnabled()) {
+                // Read the shortcut from the keymap — user may have changed it via Settings → Keymap
+                copy.setShortcut(lastKeyboardShortcut(keymap.getShortcuts(ActionsRegistrar.PREFIX + copy.getId())));
+            }
+            copies.add(copy);
         }
         tableModel.setRows(copies);
     }
 
+    private static @Nullable String lastKeyboardShortcut(Shortcut[] shortcuts) {
+        KeyboardShortcut last = null;
+        for (Shortcut s : shortcuts) {
+            if (s.isKeyboard()) last = (KeyboardShortcut) s;
+        }
+        return last != null ? last.getFirstKeyStroke().toString() : null;
+    }
+
     @Override
     public void disposeUIResources() {
+        if (messageBusConnection != null) {
+            messageBusConnection.disconnect();
+            messageBusConnection = null;
+        }
         mainPanel  = null;
         table      = null;
         tableModel = null;
@@ -216,7 +266,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         }
 
         @Override public int getRowCount()    { return rows.size(); }
-        @Override public int getColumnCount() { return 5; }
+        @Override public int getColumnCount() { return 6; }
 
         @Override
         public String getColumnName(int col) {
@@ -224,7 +274,8 @@ public class ToolbarLauncherConfigurable implements Configurable {
                 case 0, 1 -> "";
                 case 2 -> "Type";
                 case 3 -> "Label";
-                default -> "Command";
+                case 4 -> "Command";
+                default -> "Shortcut";
             };
         }
 
@@ -254,7 +305,12 @@ public class ToolbarLauncherConfigurable implements Configurable {
                 case 1 -> ToolbarAction.loadIcon(c.getIconPath());
                 case 2 -> ToolType.fromId(c.getCommandType()).displayName;
                 case 3 -> c.getLabel();
-                default -> c.getGoals();
+                case 4 -> c.getGoals();
+                default -> {
+                    if (c.getShortcut() == null || c.getShortcut().isEmpty()) yield "";
+                    KeyStroke ks = KeyStroke.getKeyStroke(c.getShortcut());
+                    yield ks != null ? KeymapUtil.getKeystrokeText(ks) : "";
+                }
             };
         }
     }
