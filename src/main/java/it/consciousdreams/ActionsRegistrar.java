@@ -70,11 +70,11 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                 .collect(Collectors.toSet());
 
         // Unregister actions no longer in settings and remove their shortcuts from the keymap
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+        // Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         Set<String> toRemove = new HashSet<>(registeredIds);
         toRemove.removeAll(expectedIds);
         for (String id : toRemove) {
-            keymap.removeAllActionShortcuts(id);
+            // keymap.removeAllActionShortcuts(id);
             am.unregisterAction(id);
             registeredIds.remove(id);
         }
@@ -92,7 +92,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                     }
                     am.registerAction(id, new ToolbarAction(config));
                     registeredIds.add(id);
-                    applyShortcut(keymap, id, config.getShortcut());
+                    // applyShortcut(keymap, id, config.getShortcut());
                 }
             }
         }
@@ -106,7 +106,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             for (Component child : container.getComponents()) updateToolbars(child);
         }
     }
-
+/*
     private static void applyShortcut(Keymap keymap, String actionId,
                                       @org.jetbrains.annotations.Nullable String shortcut) {
         keymap.removeAllActionShortcuts(actionId);
@@ -117,7 +117,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             }
         }
     }
-
+*/
     /**
      * Called when the user modifies the toolbar via "Customize Toolbar".
      * Reads the schema XML via the public {@link CustomActionsSchema#getState()} API

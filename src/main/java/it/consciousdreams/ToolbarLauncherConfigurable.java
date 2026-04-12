@@ -55,7 +55,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         mainPanel.add(new JLabel("Configure toolbar buttons:"), BorderLayout.NORTH);
         mainPanel.add(decoratedTable, BorderLayout.CENTER);
 
-        subscribeToKeymapChanges();
+        // subscribeToKeymapChanges();
         reset();
         return mainPanel;
     }
@@ -119,7 +119,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         if (max >= 0)       column.setMaxWidth(max);
         if (preferred >= 0) column.setPreferredWidth(preferred);
     }
-
+/*
     private void subscribeToKeymapChanges() {
         messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
@@ -134,7 +134,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
             }
         });
     }
-
+*/
     private void addAction() {
         ActionEditDialog dialog = new ActionEditDialog(null, null, null, null, null);
         if (dialog.showAndGet()) {
@@ -197,13 +197,22 @@ public class ToolbarLauncherConfigurable implements Configurable {
         ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows());
         ActionsRegistrar.sync();
         // Fire activeKeymapChanged so the Keymap settings panel rebuilds its action tree
+        /*
         ApplicationManager.getApplication().getMessageBus()
                 .syncPublisher(KeymapManagerListener.TOPIC)
                 .activeKeymapChanged(KeymapManager.getInstance().getActiveKeymap());
+         */
     }
 
     @Override
     public void reset() {
+        if (tableModel == null) return;
+        List<ActionConfig> copies = new ArrayList<>();
+        for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
+            copies.add(config.copy());
+        }
+        tableModel.setRows(copies);
+        /*
         if (tableModel == null) return;
         Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         List<ActionConfig> copies = new ArrayList<>();
@@ -216,8 +225,9 @@ public class ToolbarLauncherConfigurable implements Configurable {
             copies.add(copy);
         }
         tableModel.setRows(copies);
+         */
     }
-
+    /*
     private static @Nullable String lastKeyboardShortcut(Shortcut[] shortcuts) {
         KeyboardShortcut last = null;
         for (Shortcut s : shortcuts) {
@@ -225,6 +235,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         }
         return last != null ? last.getFirstKeyStroke().toString() : null;
     }
+     */
 
     @Override
     public void disposeUIResources() {
