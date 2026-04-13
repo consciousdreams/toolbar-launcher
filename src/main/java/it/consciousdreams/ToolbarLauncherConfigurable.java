@@ -128,8 +128,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
             @Override
             public void shortcutsChanged(@NotNull Keymap keymap, @NotNull Collection<String> actionIds, boolean fromSettings) {
-                if (!fromSettings)
-                    return;
+                if (ActionsRegistrar.updatingKeymapFromPlugin) return;
                 if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX)))
                     reset(keymap);
             }
@@ -175,19 +174,19 @@ public class ToolbarLauncherConfigurable implements Configurable {
     }
 
     private void updateKeymap(ActionConfig config) {
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
-        String actionId = ActionsRegistrar.PREFIX + config.getId();
+        ActionsRegistrar.updatingKeymapFromPlugin = true;
+        try {
+            Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+            String actionId = ActionsRegistrar.PREFIX + config.getId();
 
-        Shortcut[] shortcuts = keymap.getShortcuts(actionId);
-        for (Shortcut shortcut : shortcuts) {
-            if (shortcut.isKeyboard()) {
-                keymap.removeShortcut(actionId, shortcut);
+            for (Shortcut shortcut : keymap.getShortcuts(actionId)) {
+                if (shortcut.isKeyboard()) keymap.removeShortcut(actionId, shortcut);
             }
-        }
 
-        KeyStroke ks = KeyStroke.getKeyStroke(config.getShortcut());
-        if (ks != null) {
-            keymap.addShortcut(actionId, new KeyboardShortcut(ks, null));
+            KeyStroke ks = KeyStroke.getKeyStroke(config.getShortcut());
+            if (ks != null) keymap.addShortcut(actionId, new KeyboardShortcut(ks, null));
+        } finally {
+            ActionsRegistrar.updatingKeymapFromPlugin = false;
         }
     }
 

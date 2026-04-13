@@ -45,6 +45,12 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
     /** Guards against re-entry when we modify the schema from inside the listener. */
     private static boolean handlingCustomization = false;
 
+    /**
+     * Set to {@code true} while {@link it.consciousdreams.ToolbarLauncherConfigurable#updateKeymap}
+     * is running, so {@link ToolbarLauncherKeymapListener} ignores the keymap events it fires.
+     */
+    static boolean updatingKeymapFromPlugin = false;
+
     @Override
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
