@@ -55,7 +55,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         mainPanel.add(new JLabel("Configure toolbar buttons:"), BorderLayout.NORTH);
         mainPanel.add(decoratedTable, BorderLayout.CENTER);
 
-        // subscribeToKeymapChanges();
+        subscribeToKeymapChanges();
         reset();
         return mainPanel;
     }
@@ -119,7 +119,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         if (max >= 0)       column.setMaxWidth(max);
         if (preferred >= 0) column.setPreferredWidth(preferred);
     }
-/*
+
     private void subscribeToKeymapChanges() {
         messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
@@ -134,7 +134,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
             }
         });
     }
-*/
+
     private void addAction() {
         ActionEditDialog dialog = new ActionEditDialog(null, null, null, null, null);
         if (dialog.showAndGet()) {

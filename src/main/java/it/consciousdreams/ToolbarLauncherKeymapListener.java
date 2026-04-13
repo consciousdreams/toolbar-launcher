@@ -24,7 +24,16 @@ import java.util.stream.Stream;
 public class ToolbarLauncherKeymapListener implements KeymapManagerListener {
 
     private static final Logger LOG = Logger.getInstance(ToolbarLauncherKeymapListener.class);
-
+/*
+    @Override
+    public void activeKeymapChanged(@Nullable Keymap keymap) {
+        LOG.warn("Active keymap changed. New active keymap: "
+                + (keymap != null ? keymap.getName() : "null"));
+        if (keymap != null) {
+            syncAllShortcuts(keymap);
+        }
+    }
+*/
     @Override
     public void shortcutsChanged(@NotNull Keymap keymap, @NotNull Collection<String> actionIds, boolean fromSettings) {
         for (String id : actionIds) {
@@ -59,7 +68,18 @@ public class ToolbarLauncherKeymapListener implements KeymapManagerListener {
             }
         }
     }
-
+/*
+    private void syncAllShortcuts(Keymap keymap) {
+        List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
+        for (ActionConfig config : configs) {
+            String actionId = ActionsRegistrar.PREFIX + config.getId();
+            Shortcut[] shortcuts = keymap.getShortcuts(actionId);
+            LOG.warn("Sync – action: " + actionId + " shortcuts: " + Arrays.toString(shortcuts));
+            Shortcut lastShortcut = lastKeyboardShortcut(shortcuts);
+            config.setShortcut(lastShortcut != null ? ((KeyboardShortcut) lastShortcut).getFirstKeyStroke().toString() : null);
+        }
+    }
+*/
     private static @Nullable Shortcut lastKeyboardShortcut(Shortcut[] shortcuts) {
         KeyboardShortcut last = null;
         for (Shortcut s : shortcuts) {

@@ -9,8 +9,10 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.keymap.KeymapManagerListener;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.WindowManager;
 
@@ -47,6 +49,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
         CustomActionsListener.subscribe(Disposer.newDisposable(), ActionsRegistrar::handleToolbarCustomization);
+        // ApplicationManager.getApplication().getMessageBus().connect().subscribe(KeymapManagerListener.TOPIC, new ToolbarLauncherKeymapListener());
     }
 
     @Override
