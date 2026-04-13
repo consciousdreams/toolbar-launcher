@@ -44,15 +44,19 @@ public class ToolbarLauncherKeymapListener implements KeymapManagerListener {
             }
             if (matched == null) continue;
 
-            // Identify the shortcut to keep. Prefer the one that differs from the stored
-            // value: IntelliJ fires this event while both old and new are simultaneously
-            // present, so picking "last by position" is unreliable.
-            KeyboardShortcut toKeep = resolveToKeep(keymap.getShortcuts(id), matched.getShortcut());
+            // Use keymapBaseline as the "before this change" reference so that
+            // resolveToKeep correctly identifies the newly-assigned shortcut even when
+            // the user changed it via the plugin dialog without clicking Apply first
+            // (in that case ToolbarLauncherSettings still has the pre-dialog value).
+            String baseline = ActionsRegistrar.keymapBaseline.getOrDefault(id, matched.getShortcut());
+            KeyboardShortcut toKeep = resolveToKeep(keymap.getShortcuts(id), baseline);
 
-            // Update config BEFORE removing extras so the re-entrant shortcutsChanged
-            // call triggered by keymap.removeShortcut below sees the updated value and
-            // exits cleanly with no further work to do.
             String newValue = toKeep != null ? toKeep.getFirstKeyStroke().toString() : null;
+
+            // Update baseline BEFORE removing extras so re-entrant shortcutsChanged calls
+            // triggered by keymap.removeShortcut below find no further work to do.
+            ActionsRegistrar.keymapBaseline.put(id, newValue);
+
             if (!Objects.equals(matched.getShortcut(), newValue)) {
                 matched.setShortcut(newValue);
             }

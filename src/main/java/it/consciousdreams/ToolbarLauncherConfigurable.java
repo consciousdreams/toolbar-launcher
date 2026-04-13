@@ -188,6 +188,12 @@ public class ToolbarLauncherConfigurable implements Configurable {
         } finally {
             ActionsRegistrar.updatingKeymapFromPlugin = false;
         }
+
+        // Update keymapBaseline so ToolbarLauncherKeymapListener has the correct comparison
+        // reference if the user subsequently edits this shortcut from the Keymap panel.
+        // We do NOT touch ToolbarLauncherSettings here — that must wait for Apply so that
+        // isModified() correctly detects pending changes and keeps the Apply button enabled.
+        ActionsRegistrar.keymapBaseline.put(ActionsRegistrar.PREFIX + config.getId(), config.getShortcut());
     }
 
     private void removeAction() {

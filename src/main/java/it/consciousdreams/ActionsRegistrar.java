@@ -21,8 +21,10 @@ import java.awt.Container;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.KeyStroke;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,6 +52,14 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
      * is running, so {@link ToolbarLauncherKeymapListener} ignores the keymap events it fires.
      */
     static boolean updatingKeymapFromPlugin = false;
+
+    /**
+     * Tracks the shortcut currently present in the active keymap for each of our actions.
+     * Updated by {@link ToolbarLauncherConfigurable#updateKeymap} and by
+     * {@link ToolbarLauncherKeymapListener} so the listener always has an accurate baseline
+     * for {@code resolveToKeep}, independent of when the user clicks Apply.
+     */
+    static final Map<String, String> keymapBaseline = new HashMap<>();
 
     @Override
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
@@ -105,6 +115,21 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                 }
             }
         }
+        // Refresh keymapBaseline to reflect the current active keymap state.
+        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+        keymapBaseline.clear();
+        for (ActionConfig config : configs) {
+            if (config.isEnabled()) {
+                String actionId = PREFIX + config.getId();
+                String shortcut = null;
+                for (com.intellij.openapi.actionSystem.Shortcut s : keymap.getShortcuts(actionId)) {
+                    if (s.isKeyboard())
+                        shortcut = ((com.intellij.openapi.actionSystem.KeyboardShortcut) s).getFirstKeyStroke().toString();
+                }
+                keymapBaseline.put(actionId, shortcut);
+            }
+        }
+
         var frame = WindowManager.getInstance().getIdeFrame(null);
         if (frame != null) updateToolbars(frame.getComponent());
     }
