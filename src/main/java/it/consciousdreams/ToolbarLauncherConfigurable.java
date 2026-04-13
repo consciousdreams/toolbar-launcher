@@ -1,5 +1,6 @@
 package it.consciousdreams;
 
+import com.intellij.ide.ui.customization.CustomActionsSchema;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.Shortcut;
 import com.intellij.openapi.application.ApplicationManager;
@@ -9,6 +10,7 @@ import com.intellij.openapi.keymap.KeymapManagerListener;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.util.messages.MessageBusConnection;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
@@ -22,6 +24,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 
@@ -124,8 +127,11 @@ public class ToolbarLauncherConfigurable implements Configurable {
         messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
         messageBusConnection.subscribe(KeymapManagerListener.TOPIC, new KeymapManagerListener() {
             @Override
-            public void shortcutsChanged(@NotNull Keymap keymap, @NotNull java.util.Collection<String> actionIds, boolean fromSettings) {
-                if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX))) reset();
+            public void shortcutsChanged(@NotNull Keymap keymap, @NotNull Collection<String> actionIds, boolean fromSettings) {
+                if (!fromSettings)
+                    return;
+                if (actionIds.stream().anyMatch(id -> id.startsWith(ActionsRegistrar.PREFIX)))
+                    reset(keymap);
             }
 
             @Override
@@ -147,6 +153,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
             config.setShortcut(dialog.getShortcut());
             config.setCommandType(dialog.getCommandType());
             tableModel.addRow(config);
+            updateKeymap(config);
         }
     }
 
@@ -163,6 +170,24 @@ public class ToolbarLauncherConfigurable implements Configurable {
             config.setShortcut(dialog.getShortcut());
             config.setCommandType(dialog.getCommandType());
             tableModel.fireTableRowsUpdated(row, row);
+            updateKeymap(config);
+        }
+    }
+
+    private void updateKeymap(ActionConfig config) {
+        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+        String actionId = ActionsRegistrar.PREFIX + config.getId();
+
+        Shortcut[] shortcuts = keymap.getShortcuts(actionId);
+        for (Shortcut shortcut : shortcuts) {
+            if (shortcut.isKeyboard()) {
+                keymap.removeShortcut(actionId, shortcut);
+            }
+        }
+
+        KeyStroke ks = KeyStroke.getKeyStroke(config.getShortcut());
+        if (ks != null) {
+            keymap.addShortcut(actionId, new KeyboardShortcut(ks, null));
         }
     }
 
@@ -194,8 +219,11 @@ public class ToolbarLauncherConfigurable implements Configurable {
 
     @Override
     public void apply() {
-        ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows());
+        // ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows());
         ActionsRegistrar.sync();
+        ToolbarLauncherSettings.getInstance().setActions(tableModel.getRows().stream().map(ActionConfig::copy).toList());
+        //reset();
+
         // Fire activeKeymapChanged so the Keymap settings panel rebuilds its action tree
         /*
         ApplicationManager.getApplication().getMessageBus()
@@ -225,9 +253,22 @@ public class ToolbarLauncherConfigurable implements Configurable {
             copies.add(copy);
         }
         tableModel.setRows(copies);
-         */
+        */
     }
-    /*
+
+    private void reset(Keymap keymap) {
+        if (tableModel == null) return;
+        List<ActionConfig> copies = new ArrayList<>();
+        for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
+            ActionConfig copy = config.copy();
+            if (copy.isEnabled()) {
+                copy.setShortcut(lastKeyboardShortcut(keymap.getShortcuts(ActionsRegistrar.PREFIX + copy.getId())));
+            }
+            copies.add(copy);
+        }
+        tableModel.setRows(copies);
+    }
+
     private static @Nullable String lastKeyboardShortcut(Shortcut[] shortcuts) {
         KeyboardShortcut last = null;
         for (Shortcut s : shortcuts) {
@@ -235,7 +276,6 @@ public class ToolbarLauncherConfigurable implements Configurable {
         }
         return last != null ? last.getFirstKeyStroke().toString() : null;
     }
-     */
 
     @Override
     public void disposeUIResources() {
