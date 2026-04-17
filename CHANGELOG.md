@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix shortcut synchronization
+- Remove IntelliJ private methods
+
 ## [1.0.2] - 2026-04-08
 
 ### Added
