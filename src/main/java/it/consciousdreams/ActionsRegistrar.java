@@ -9,8 +9,10 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.keymap.KeymapManagerListener;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.WindowManager;
 
@@ -19,8 +21,10 @@ import java.awt.Container;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.KeyStroke;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -43,10 +47,25 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
     /** Guards against re-entry when we modify the schema from inside the listener. */
     private static boolean handlingCustomization = false;
 
+    /**
+     * Set to {@code true} while {@link it.consciousdreams.ToolbarLauncherConfigurable#updateKeymap}
+     * is running, so {@link ToolbarLauncherKeymapListener} ignores the keymap events it fires.
+     */
+    static boolean updatingKeymapFromPlugin = false;
+
+    /**
+     * Tracks the shortcut currently present in the active keymap for each of our actions.
+     * Updated by {@link ToolbarLauncherConfigurable#updateKeymap} and by
+     * {@link ToolbarLauncherKeymapListener} so the listener always has an accurate baseline
+     * for {@code resolveToKeep}, independent of when the user clicks Apply.
+     */
+    static final Map<String, String> keymapBaseline = new HashMap<>();
+
     @Override
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
         CustomActionsListener.subscribe(Disposer.newDisposable(), ActionsRegistrar::handleToolbarCustomization);
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(KeymapManagerListener.TOPIC, new ToolbarLauncherKeymapListener());
     }
 
     @Override
@@ -92,10 +111,28 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                     }
                     am.registerAction(id, new ToolbarAction(config));
                     registeredIds.add(id);
-                    applyShortcut(keymap, id, config.getShortcut());
+                    // Apply from config only when the keymap has no shortcut yet (e.g. fresh install).
+                    // If the keymap already has one, the user set it intentionally — leave it alone.
+                    if (keymap.getShortcuts(id).length == 0) {
+                        applyShortcut(keymap, id, config.getShortcut());
+                    }
                 }
             }
         }
+        // Refresh keymapBaseline to reflect the current active keymap state.
+        keymapBaseline.clear();
+        for (ActionConfig config : configs) {
+            if (config.isEnabled()) {
+                String actionId = PREFIX + config.getId();
+                String shortcut = null;
+                for (com.intellij.openapi.actionSystem.Shortcut s : keymap.getShortcuts(actionId)) {
+                    if (s.isKeyboard())
+                        shortcut = ((com.intellij.openapi.actionSystem.KeyboardShortcut) s).getFirstKeyStroke().toString();
+                }
+                keymapBaseline.put(actionId, shortcut);
+            }
+        }
+
         var frame = WindowManager.getInstance().getIdeFrame(null);
         if (frame != null) updateToolbars(frame.getComponent());
     }
@@ -117,7 +154,6 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             }
         }
     }
-
     /**
      * Called when the user modifies the toolbar via "Customize Toolbar".
      * Reads the schema XML via the public {@link CustomActionsSchema#getState()} API

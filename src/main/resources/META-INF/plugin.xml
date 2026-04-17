@@ -13,6 +13,8 @@
                   topic="com.intellij.ide.AppLifecycleListener"/>
         <listener class="it.consciousdreams.ActionsRegistrar"
                   topic="com.intellij.ide.plugins.DynamicPluginListener"/>
+        <listener class="it.consciousdreams.ToolbarLauncherKeymapListener"
+                  topic="com.intellij.openapi.keymap.KeymapManagerListener"/>
     </applicationListeners>
 
     <extensions defaultExtensionNs="com.intellij">
