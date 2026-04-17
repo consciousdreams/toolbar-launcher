@@ -42,7 +42,6 @@ public class ToolbarAction extends AnAction {
 
     public ToolbarAction(ActionConfig config) {
         super(config.getLabel(), config.getLabel(), loadIcon(config.getIconPath()));
-        // this.config = config.copy();
         this.config = config;
         getTemplatePresentation().setText(config.getLabel());
     }

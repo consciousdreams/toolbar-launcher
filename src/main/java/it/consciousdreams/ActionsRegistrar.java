@@ -65,7 +65,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
     public void appFrameCreated(@NotNull List<String> ignoredArgs) {
         sync();
         CustomActionsListener.subscribe(Disposer.newDisposable(), ActionsRegistrar::handleToolbarCustomization);
-        // ApplicationManager.getApplication().getMessageBus().connect().subscribe(KeymapManagerListener.TOPIC, new ToolbarLauncherKeymapListener());
+        ApplicationManager.getApplication().getMessageBus().connect().subscribe(KeymapManagerListener.TOPIC, new ToolbarLauncherKeymapListener());
     }
 
     @Override
@@ -89,11 +89,11 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                 .collect(Collectors.toSet());
 
         // Unregister actions no longer in settings and remove their shortcuts from the keymap
-        // Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         Set<String> toRemove = new HashSet<>(registeredIds);
         toRemove.removeAll(expectedIds);
         for (String id : toRemove) {
-            // keymap.removeAllActionShortcuts(id);
+            keymap.removeAllActionShortcuts(id);
             am.unregisterAction(id);
             registeredIds.remove(id);
         }
@@ -111,12 +111,15 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
                     }
                     am.registerAction(id, new ToolbarAction(config));
                     registeredIds.add(id);
-                    // applyShortcut(keymap, id, config.getShortcut());
+                    // Apply from config only when the keymap has no shortcut yet (e.g. fresh install).
+                    // If the keymap already has one, the user set it intentionally — leave it alone.
+                    if (keymap.getShortcuts(id).length == 0) {
+                        applyShortcut(keymap, id, config.getShortcut());
+                    }
                 }
             }
         }
         // Refresh keymapBaseline to reflect the current active keymap state.
-        Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
         keymapBaseline.clear();
         for (ActionConfig config : configs) {
             if (config.isEnabled()) {
@@ -140,7 +143,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             for (Component child : container.getComponents()) updateToolbars(child);
         }
     }
-/*
+
     private static void applyShortcut(Keymap keymap, String actionId,
                                       @org.jetbrains.annotations.Nullable String shortcut) {
         keymap.removeAllActionShortcuts(actionId);
@@ -151,7 +154,6 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             }
         }
     }
-*/
     /**
      * Called when the user modifies the toolbar via "Customize Toolbar".
      * Reads the schema XML via the public {@link CustomActionsSchema#getState()} API
