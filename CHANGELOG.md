@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix shortcut synchronization
+- Remove IntelliJ private methods
+
 ## [1.0.2] - 2026-04-08
 
 ### Added
@@ -20,7 +25,7 @@
 - Toolbar buttons update asynchronously after dynamic plugin actions are registered on startup
 - GitHub Actions bumped to latest versions (checkout v6, setup-java v5, setup-gradle v5, upload-artifact v6)
 
-## [1.0.1]
+## [1.0.1] - 2026-04-05
 
 ### Added
 
@@ -32,7 +37,7 @@
 - Selecting a different command type now always updates the command and icon
 - Plugin Marketplace description is now sourced from README.md
 
-## [1.0.0]
+## [1.0.0] - 2026-04-05
 
 ### Added
 
