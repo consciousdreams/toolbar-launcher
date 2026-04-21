@@ -115,6 +115,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
     private void captureSessionState() {
         originalKeymapState = new HashMap<>();
         settingsBackup      = new ArrayList<>();
+        originalActionConfigs.clear();
         for (ActionConfig config : ToolbarLauncherSettings.getInstance().getActions()) {
             String actionId = ActionsRegistrar.PREFIX + config.getId();
             // Use the settings shortcut (last saved value) as the revert target, not the
@@ -203,16 +204,24 @@ public class ToolbarLauncherConfigurable implements Configurable {
                     String newShortcut = lastKeyboardShortcut(keymap.getShortcuts(actionId));
                     updateTableRowShortcut(actionId, newShortcut);
                     if (committedToActive) {
-                        // Real commit on the active keymap → absorb so Cancel does not
-                        // revert it in disposeUIResources().
-                        absorbExternalKeymapChange(actionId, newShortcut);
+                        // External commit to the active keymap counts as a session edit
+                        // (Rule 4: Apply must become enabled; Rule 6: Cancel reverts).
+                        // Do NOT absorb into settingsBackup — leave the pre-session value
+                        // there so Cancel restores it, and flag the keymap dirty so
+                        // revertKeymap() runs in disposeUIResources().
+                        keymapDirty = true;
                     }
                 }
             }
 
             @Override
             public void activeKeymapChanged(@Nullable Keymap keymap) {
-                // New keymap — discard dirty state that belongs to the old keymap.
+                // Skip synthetic refresh events we fire ourselves via
+                // ActionsRegistrar.refreshKeymapPanel() — they're nudges to the Keymap
+                // settings panel, not real active-keymap switches, so we must not wipe
+                // the session state.
+                if (ActionsRegistrar.refreshingKeymapPanel) return;
+                // Real keymap switch — discard dirty state that belongs to the old keymap.
                 keymapDirty = false;
                 captureSessionState();
                 reset();
@@ -234,27 +243,6 @@ public class ToolbarLauncherConfigurable implements Configurable {
                 tableModel.fireTableRowsUpdated(i, i);
             }
             return;
-        }
-    }
-
-    /**
-     * Updates {@code originalKeymapState} and {@code settingsBackup} to reflect a
-     * shortcut change committed to the ACTIVE keymap outside our own edit dialog.
-     * This prevents {@link #disposeUIResources()} from reverting an applied change on
-     * Cancel. Not called for draft edits on the Keymap panel's clone, which should be
-     * reverted naturally by IntelliJ discarding the clone.
-     */
-    private void absorbExternalKeymapChange(String actionId, @Nullable String newShortcut) {
-        if (originalKeymapState != null) {
-            originalKeymapState.put(actionId, newShortcut);
-        }
-        if (settingsBackup != null) {
-            for (ActionConfig c : settingsBackup) {
-                if ((ActionsRegistrar.PREFIX + c.getId()).equals(actionId)) {
-                    c.setShortcut(newShortcut);
-                    break;
-                }
-            }
         }
     }
 
@@ -281,6 +269,9 @@ public class ToolbarLauncherConfigurable implements Configurable {
             }
 
             updateKeymap(config);
+            writeToSettings();
+            ActionsRegistrar.refreshToolbars();
+            ActionsRegistrar.refreshKeymapPanel();
         }
     }
 
@@ -312,6 +303,8 @@ public class ToolbarLauncherConfigurable implements Configurable {
             am.registerAction(actionId, new ToolbarAction(config));
 
             updateKeymap(config);
+            writeToSettings();
+            ActionsRegistrar.refreshToolbars();
         }
     }
 
@@ -351,13 +344,51 @@ public class ToolbarLauncherConfigurable implements Configurable {
             for (Shortcut s : keymap.getShortcuts(actionId)) {
                 if (s.isKeyboard()) keymap.removeShortcut(actionId, s);
             }
-            KeyStroke ks = KeyStroke.getKeyStroke(config.getShortcut());
-            if (ks != null) keymap.addShortcut(actionId, new KeyboardShortcut(ks, null));
+            String shortcut = config.getShortcut();
+            if (shortcut != null && !shortcut.isEmpty()) {
+                KeyStroke ks = KeyStroke.getKeyStroke(shortcut);
+                if (ks != null) keymap.addShortcut(actionId, new KeyboardShortcut(ks, null));
+            }
         } finally {
             ActionsRegistrar.updatingKeymapFromPlugin = false;
         }
         ActionsRegistrar.keymapBaseline.put(ActionsRegistrar.PREFIX + config.getId(), config.getShortcut());
         keymapDirty = true;
+    }
+
+    /**
+     * Removes all keyboard shortcuts for the given action from the active keymap,
+     * capturing the pre-change shortcut into {@code originalKeymapState} so Cancel
+     * can restore it. Used by remove and enable-toggle paths where the action
+     * (and therefore its keymap binding) is going away.
+     */
+    private void stripKeymap(String actionId) {
+        ActionsRegistrar.updatingKeymapFromPlugin = true;
+        try {
+            Keymap keymap = KeymapManager.getInstance().getActiveKeymap();
+            if (originalKeymapState != null) {
+                originalKeymapState.computeIfAbsent(actionId,
+                        id -> lastKeyboardShortcut(keymap.getShortcuts(id)));
+            }
+            for (Shortcut s : keymap.getShortcuts(actionId)) {
+                if (s.isKeyboard()) keymap.removeShortcut(actionId, s);
+            }
+        } finally {
+            ActionsRegistrar.updatingKeymapFromPlugin = false;
+        }
+        ActionsRegistrar.keymapBaseline.put(actionId, null);
+        keymapDirty = true;
+    }
+
+    /**
+     * Writes the current table rows to live settings so the toolbar and any other
+     * reader sees session edits instantly (Rule 3). Cancel reverts this via
+     * {@code settingsBackup}. Called after every user mutation.
+     */
+    private void writeToSettings() {
+        if (tableModel == null) return;
+        List<ActionConfig> copies = tableModel.getRows().stream().map(ActionConfig::copy).toList();
+        ToolbarLauncherSettings.getInstance().setActions(copies);
     }
 
     /**
@@ -387,9 +418,59 @@ public class ToolbarLauncherConfigurable implements Configurable {
         keymapDirty = false;
     }
 
+    /**
+     * Reacts to the Enabled checkbox being toggled directly in the table. Enabling
+     * registers the action and binds its shortcut; disabling unregisters and strips
+     * the shortcut from the keymap — both immediately, so the toolbar and Keymap
+     * settings panel reflect the change without waiting for Apply (Rule 3).
+     * Captures the pre-toggle config for Cancel restoration.
+     */
+    private void onEnabledToggled(ActionConfig config) {
+        String actionId = ActionsRegistrar.PREFIX + config.getId();
+        // Only capture persisted actions; provisional ones are torn down via
+        // provisionalActionIds on Cancel.
+        if (!provisionalActionIds.contains(actionId)) {
+            captureOriginalActionConfig(actionId);
+        }
+
+        ActionManager am = ActionManager.getInstance();
+        if (config.isEnabled()) {
+            if (am.getAction(actionId) != null) am.unregisterAction(actionId);
+            am.registerAction(actionId, new ToolbarAction(config));
+            updateKeymap(config);
+        } else {
+            stripKeymap(actionId);
+            if (am.getAction(actionId) != null) am.unregisterAction(actionId);
+        }
+        writeToSettings();
+        ActionsRegistrar.refreshToolbars();
+        ActionsRegistrar.refreshKeymapPanel();
+    }
+
     private void removeAction() {
         int row = table.getSelectedRow();
-        if (row >= 0) tableModel.removeRow(row);
+        if (row < 0) return;
+        ActionConfig config = tableModel.getRow(row);
+        String actionId = ActionsRegistrar.PREFIX + config.getId();
+
+        // Track for Cancel restoration. Provisional (session-added) actions are
+        // simply forgotten on Cancel via provisionalActionIds; persisted ones must
+        // be rebuilt in ActionManager by disposeUIResources() if the user cancels.
+        boolean wasProvisional = provisionalActionIds.remove(actionId);
+        if (!wasProvisional) {
+            captureOriginalActionConfig(actionId);
+        }
+
+        // Strip keymap binding and unregister from ActionManager so the Keymap
+        // settings panel and the toolbar button disappear immediately (Rule 3).
+        stripKeymap(actionId);
+        ActionManager am = ActionManager.getInstance();
+        if (am.getAction(actionId) != null) am.unregisterAction(actionId);
+
+        tableModel.removeRow(row);
+        writeToSettings();
+        ActionsRegistrar.refreshToolbars();
+        ActionsRegistrar.refreshKeymapPanel();
     }
 
     private void moveRow(int delta) {
@@ -403,12 +484,15 @@ public class ToolbarLauncherConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        if (tableModel == null) return false;
-        List<ActionConfig> saved  = ToolbarLauncherSettings.getInstance().getActions();
+        if (tableModel == null || settingsBackup == null) return false;
+        // Compare against the last-applied snapshot, not live settings. Every user
+        // mutation calls writeToSettings() so live settings stays in sync with the
+        // table (Rule 3 — instant effect); settingsBackup is what the dialog would
+        // restore on Cancel, so it is the correct baseline for Apply-enabled (Rule 4).
         List<ActionConfig> edited = tableModel.getRows();
-        if (saved.size() != edited.size()) return true;
-        for (int i = 0; i < saved.size(); i++) {
-            if (!saved.get(i).equals(edited.get(i))) return true;
+        if (settingsBackup.size() != edited.size()) return true;
+        for (int i = 0; i < settingsBackup.size(); i++) {
+            if (!settingsBackup.get(i).equals(edited.get(i))) return true;
         }
         return false;
     }
@@ -453,7 +537,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         ActionsRegistrar.sync();
 
         // Re-capture so a subsequent disposeUIResources() (when the dialog closes after Apply)
-        // has nothing to revert.
+        // has nothing to revert. (captureSessionState clears originalActionConfigs.)
         captureSessionState();
         keymapDirty = false;
         // sync() has now registered these actions permanently — they are no longer provisional.
@@ -526,6 +610,24 @@ public class ToolbarLauncherConfigurable implements Configurable {
             provisionalActionIds.clear();
         }
 
+        // Restore ActionManager registrations for actions that were edited or removed
+        // during this session, so the toolbar and Keymap panel realign with the
+        // restored settings (Rules 5/6). Run after revertKeymap so the re-registered
+        // action picks up the correct pre-session shortcut.
+        if (!originalActionConfigs.isEmpty()) {
+            ActionManager am = ActionManager.getInstance();
+            for (Map.Entry<String, ActionConfig> entry : originalActionConfigs.entrySet()) {
+                String id = entry.getKey();
+                ActionConfig orig = entry.getValue();
+                if (am.getAction(id) != null) am.unregisterAction(id);
+                if (orig.isEnabled()) {
+                    am.registerAction(id, new ToolbarAction(orig));
+                }
+            }
+            originalActionConfigs.clear();
+            ActionsRegistrar.refreshToolbars();
+        }
+
         if (messageBusConnection != null) {
             messageBusConnection.disconnect();
             messageBusConnection = null;
@@ -536,7 +638,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
         originalKeymapState = null;
     }
 
-    private static class ActionsTableModel extends AbstractTableModel {
+    private class ActionsTableModel extends AbstractTableModel {
         private final List<ActionConfig> rows = new ArrayList<>();
 
         void setRows(List<ActionConfig> source) {
@@ -591,7 +693,10 @@ public class ToolbarLauncherConfigurable implements Configurable {
         @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 0 && value instanceof Boolean b) {
-                rows.get(row).setEnabled(b);
+                ActionConfig config = rows.get(row);
+                if (config.isEnabled() == b) return;
+                config.setEnabled(b);
+                onEnabledToggled(config);
                 fireTableCellUpdated(row, col);
             }
         }

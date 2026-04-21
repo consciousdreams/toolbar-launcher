@@ -3,6 +3,7 @@ package it.consciousdreams;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.Shortcut;
 import com.intellij.openapi.keymap.Keymap;
+import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.keymap.KeymapManagerListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,9 +27,16 @@ public class ToolbarLauncherKeymapListener implements KeymapManagerListener {
         // Plugin-update guard: skip events fired by updateKeymap in the configurable.
         if (ActionsRegistrar.updatingKeymapFromPlugin) return;
 
+        // We handle BOTH the active keymap and the Keymap settings panel's editing clone.
+        // Rule 3 requires that adding a shortcut on the Keymap panel removes any other
+        // keyboard shortcuts for that command *immediately* — i.e. on the clone, before
+        // Apply. Cancel safety is provided by ToolbarLauncherConfigurable.settingsBackup,
+        // which restores live settings if the user discards the session.
+        //
         // NOTE: we intentionally do NOT filter on fromSettings here.
         // Shortcut removal from the Keymap panel fires fromSettings=false in some
         // IntelliJ versions; filtering it out was the reason removals were silently ignored.
+        boolean isActive = keymap == KeymapManager.getInstance().getActiveKeymap();
 
         List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
 
@@ -44,18 +52,21 @@ public class ToolbarLauncherKeymapListener implements KeymapManagerListener {
             }
             if (matched == null) continue;
 
-            // Use keymapBaseline as the "before this change" reference so that
-            // resolveToKeep correctly identifies the newly-assigned shortcut even when
-            // the user changed it via the plugin dialog without clicking Apply first
-            // (in that case ToolbarLauncherSettings still has the pre-dialog value).
+            // Use keymapBaseline (which tracks the active keymap) as the "before this
+            // change" reference so resolveToKeep identifies the newly-assigned shortcut
+            // even when the user changed it via the plugin dialog without clicking Apply.
+            // For clone events this is a best-effort heuristic: the clone was snapshotted
+            // from the active keymap, so the baseline is usually the same value.
             String baseline = ActionsRegistrar.keymapBaseline.getOrDefault(id, matched.getShortcut());
             KeyboardShortcut toKeep = resolveToKeep(keymap.getShortcuts(id), baseline);
 
             String newValue = toKeep != null ? toKeep.getFirstKeyStroke().toString() : null;
 
-            // Update baseline BEFORE removing extras so re-entrant shortcutsChanged calls
-            // triggered by keymap.removeShortcut below find no further work to do.
-            ActionsRegistrar.keymapBaseline.put(id, newValue);
+            // Only update baseline for active keymap changes — keymapBaseline mirrors
+            // the active keymap's state, not the clone's.
+            if (isActive) {
+                ActionsRegistrar.keymapBaseline.put(id, newValue);
+            }
 
             if (!Objects.equals(matched.getShortcut(), newValue)) {
                 matched.setShortcut(newValue);

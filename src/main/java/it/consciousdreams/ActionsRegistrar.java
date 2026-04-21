@@ -9,26 +9,26 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.actionSystem.Shortcut;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.keymap.KeymapManagerListener;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.WindowManager;
-
-import java.awt.Component;
-import java.awt.Container;
+import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.KeyStroke;
+import java.awt.Component;
+import java.awt.Container;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.jdom.Element;
 
 public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginListener {
 
@@ -52,6 +52,14 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
      * is running, so {@link ToolbarLauncherKeymapListener} ignores the keymap events it fires.
      */
     static boolean updatingKeymapFromPlugin = false;
+
+    /**
+     * Set to {@code true} while {@link #refreshKeymapPanel()} is publishing a synthetic
+     * {@code activeKeymapChanged} event. The ToolbarLauncherConfigurable's own listener
+     * checks this flag and skips reset — otherwise it would wipe the session's in-progress
+     * table state as if the user had switched keymaps.
+     */
+    static boolean refreshingKeymapPanel = false;
 
     /**
      * Tracks the shortcut currently present in the active keymap for each of our actions.
@@ -125,16 +133,47 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
             if (config.isEnabled()) {
                 String actionId = PREFIX + config.getId();
                 String shortcut = null;
-                for (com.intellij.openapi.actionSystem.Shortcut s : keymap.getShortcuts(actionId)) {
+                for (Shortcut s : keymap.getShortcuts(actionId)) {
                     if (s.isKeyboard())
-                        shortcut = ((com.intellij.openapi.actionSystem.KeyboardShortcut) s).getFirstKeyStroke().toString();
+                        shortcut = ((KeyboardShortcut) s).getFirstKeyStroke().toString();
                 }
                 keymapBaseline.put(actionId, shortcut);
             }
         }
 
+        refreshToolbars();
+    }
+
+    /**
+     * Repaints any active toolbars so {@link ToolbarLauncherActionGroup#getChildren}
+     * is re-invoked and newly added / removed actions become visible without restart.
+     * Safe to call from the EDT.
+     */
+    static void refreshToolbars() {
         var frame = WindowManager.getInstance().getIdeFrame(null);
         if (frame != null) updateToolbars(frame.getComponent());
+    }
+
+    /**
+     * Forces the IDE's Keymap settings panel to rebuild its action tree by publishing a
+     * synthetic {@link KeymapManagerListener#activeKeymapChanged} event. Needed after
+     * registering or unregistering an action in ActionManager during a Settings session,
+     * because the Keymap panel does not rebuild on its own for new action IDs — it only
+     * updates existing leaves in response to {@code shortcutsChanged}.
+     *
+     * <p>Side effect: the Keymap panel discards any in-progress user drafts on its
+     * editing clone. Acceptable trade-off given that the user just confirmed an add/edit
+     * in our panel and expects the new action to appear in the Keymap tree.</p>
+     */
+    static void refreshKeymapPanel() {
+        refreshingKeymapPanel = true;
+        try {
+            ApplicationManager.getApplication().getMessageBus()
+                    .syncPublisher(KeymapManagerListener.TOPIC)
+                    .activeKeymapChanged(KeymapManager.getInstance().getActiveKeymap());
+        } finally {
+            refreshingKeymapPanel = false;
+        }
     }
 
     private static void updateToolbars(Component component) {
@@ -144,8 +183,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
         }
     }
 
-    private static void applyShortcut(Keymap keymap, String actionId,
-                                      @org.jetbrains.annotations.Nullable String shortcut) {
+    private static void applyShortcut(Keymap keymap, String actionId, @Nullable String shortcut) {
         keymap.removeAllActionShortcuts(actionId);
         if (shortcut != null && !shortcut.isEmpty()) {
             KeyStroke ks = KeyStroke.getKeyStroke(shortcut);
