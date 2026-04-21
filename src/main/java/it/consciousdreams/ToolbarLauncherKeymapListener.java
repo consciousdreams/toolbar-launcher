@@ -52,18 +52,17 @@ public class ToolbarLauncherKeymapListener implements KeymapManagerListener {
             }
             if (matched == null) continue;
 
-            // Use keymapBaseline (which tracks the active keymap) as the "before this
-            // change" reference so resolveToKeep identifies the newly-assigned shortcut
-            // even when the user changed it via the plugin dialog without clicking Apply.
-            // For clone events this is a best-effort heuristic: the clone was snapshotted
-            // from the active keymap, so the baseline is usually the same value.
-            String baseline = ActionsRegistrar.keymapBaseline.getOrDefault(id, matched.getShortcut());
+            // Use the ActionConfig's current shortcut as the "before this change" reference.
+            // It is updated on every event below, so on the Nth reassignment it holds the
+            // (N-1)th value — exactly what resolveToKeep needs. keymapBaseline would be
+            // stale here for clone events (only updated on active-keymap commits), causing
+            // 2nd+ reassignments via the Keymap settings panel to resolve to the previous
+            // shortcut instead of the new one.
+            String baseline = matched.getShortcut();
             KeyboardShortcut toKeep = resolveToKeep(keymap.getShortcuts(id), baseline);
 
             String newValue = toKeep != null ? toKeep.getFirstKeyStroke().toString() : null;
 
-            // Only update baseline for active keymap changes — keymapBaseline mirrors
-            // the active keymap's state, not the clone's.
             if (isActive) {
                 ActionsRegistrar.keymapBaseline.put(id, newValue);
             }
