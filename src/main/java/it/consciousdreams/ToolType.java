@@ -1,5 +1,7 @@
 package it.consciousdreams;
 
+import com.intellij.openapi.diagnostic.Logger;
+
 /**
  * Supported command types for toolbar actions.
  * All non-Maven types are executed via the system shell.
@@ -35,7 +37,7 @@ public enum ToolType {
         for (ToolType t : values()) {
             if (t.id.equals(id)) return t;
         }
-        com.intellij.openapi.diagnostic.Logger.getInstance(ToolType.class)
+        Logger.getInstance(ToolType.class)
                 .warn("Unknown commandType '" + id + "', defaulting to MAVEN");
         return MAVEN;
     }

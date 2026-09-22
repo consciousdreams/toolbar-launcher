@@ -54,7 +54,7 @@ On startup, `ActionsRegistrar` also subscribes to `CustomActionsListener`. When 
 ### Action execution
 
 `ToolbarAction` branches on `config.isMaven()`:
-- **Maven**: parses `config.goals` into goals list + `-D` properties map, delegates to `MavenRunner.getInstance(project).run()`
+- **Maven**: looks up the optional `MavenCommandRunner` project service. `NativeMavenCommandRunner`, registered only by `toolbar-launcher-maven.xml`, parses `config.goals` into goals list + `-D` properties map, delegates to `MavenRunner.getInstance(project).run()`
 - **Shell/other**: runs via `$SHELL -c <command>` (or `cmd.exe /c` on Windows) using `OSProcessHandler` + `ConsoleView` in the Run tool window
 
 **Important:** The `MavenRunnerParameters` constructor is overloaded. Always cast the pomFile argument explicitly as `(String) null` to avoid ambiguous call compilation errors.
@@ -84,6 +84,6 @@ On startup, `ActionsRegistrar` also subscribes to `CustomActionsListener`. When 
 
 ### Compatibility
 
-- `sinceBuild` / `untilBuild` in `build.gradle.kts` must be kept in sync with the IDE version in use. Current range: `241` – `261.*`.
-- The plugin depends on `org.jetbrains.idea.maven` — only works in IDE distributions that bundle the Maven plugin.
+- `pluginSinceBuild` in `gradle.properties` currently sets the minimum build to `241`; no upper build limit is declared.
+- `org.jetbrains.idea.maven` is optional. Keep all Maven API references in `NativeMavenCommandRunner`, registered by the optional descriptor. The shared action code uses only `MavenCommandRunner`; if the service is absent, it displays a message suggesting a Shell action. This lets PhpStorm load the plugin without Maven.
 - Requires Gradle 9.0+ (`foojay-resolver-convention` must be `0.9.0`, not `1.0.0`, which is incompatible with Gradle 9.x).
