@@ -6,7 +6,7 @@
     <description>Adds configurable toolbar buttons to run Maven, Gradle, npm, shell commands and more</description>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends>org.jetbrains.idea.maven</depends>
+    <depends optional="true" config-file="toolbar-launcher-maven.xml">org.jetbrains.idea.maven</depends>
 
     <applicationListeners>
         <listener class="it.consciousdreams.ActionsRegistrar"
