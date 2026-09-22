@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Make native Maven integration optional so the plugin can load in PhpStorm; Maven buttons explain how to use a Shell action when the integration is unavailable.
+
 ## [1.0.3] - 2026-04-17
 
 ### Fixed

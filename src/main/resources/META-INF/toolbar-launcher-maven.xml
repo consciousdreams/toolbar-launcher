@@ -1,0 +1,6 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <projectService serviceInterface="it.consciousdreams.MavenCommandRunner"
+                        serviceImplementation="it.consciousdreams.NativeMavenCommandRunner"/>
+    </extensions>
+</idea-plugin>

@@ -7,7 +7,7 @@
 <!-- Plugin description -->
 One-click toolbar buttons to run any build command — fully customizable.
 
-**Toolbar Launcher** adds configurable toolbar buttons to IntelliJ IDEA for running Maven, Gradle, npm,
+**Toolbar Launcher** adds configurable toolbar buttons to IntelliJ IDEA and PhpStorm for running Maven, Gradle, npm,
 shell, scripts, and more — no need to open tool windows or configure run configurations every time.
 
 ## Features
@@ -47,9 +47,10 @@ Open **Settings → Tools → Toolbar Launcher** to manage your buttons:
 
 ## Requirements
 
-- IntelliJ IDEA (Community or Ultimate) — builds `241` through `261.*`
+- IntelliJ IDEA (Community or Ultimate) or PhpStorm — build `241` or newer
 - Java 17+
-- The Maven plugin must be bundled with your IDE distribution (required for Maven commands)
+- Native Maven actions require the IDE's Maven plugin. It is optional: npm, yarn, Gradle, Make, Docker, and shell actions work without it.
+- Without Maven integration, Maven buttons display an explanatory message. To run a locally installed Maven, use a **Shell** action such as `mvn clean install`.
 
 ## Build & Run
 
@@ -87,7 +88,7 @@ The project uses GitHub Actions for CI/CD.
 ## Manual Installation
 
 1. Run `./gradlew buildPlugin`
-2. Open IntelliJ IDEA → **Settings → Plugins → Install Plugin from Disk**
+2. Open your IDE → **Settings → Plugins → Install Plugin from Disk**
 3. Select the `.zip` file from `build/distributions/`
 
 ## Project Structure
