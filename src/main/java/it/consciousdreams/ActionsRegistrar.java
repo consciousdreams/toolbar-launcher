@@ -88,6 +88,7 @@ public class ActionsRegistrar implements AppLifecycleListener, DynamicPluginList
      * Safe to call multiple times (idempotent for unchanged actions).
      */
     static void sync() {
+        ApplicationManager.getApplication().getService(ToolbarButtonContextMenu.class);
         ActionManager am = ActionManager.getInstance();
         List<ActionConfig> configs = ToolbarLauncherSettings.getInstance().getActions();
 

@@ -40,6 +40,7 @@ public class ToolbarLauncherConfigurable implements Configurable {
     private JBTable table;
     private ActionsTableModel tableModel;
     private MessageBusConnection messageBusConnection;
+    private String pendingEditId;
 
     /**
      * Keymap shortcuts captured at session start (or after Apply).
@@ -104,7 +105,27 @@ public class ToolbarLauncherConfigurable implements Configurable {
         keymapDirty = false;
         subscribeToKeymapChanges();
         reset();
+        if (pendingEditId != null) SwingUtilities.invokeLater(this::openPendingEdit);
         return mainPanel;
+    }
+
+    /** Selects and opens the requested action after the Settings panel has been created. */
+    void requestEdit(String actionId) {
+        pendingEditId = actionId;
+        if (tableModel != null) SwingUtilities.invokeLater(this::openPendingEdit);
+    }
+
+    private void openPendingEdit() {
+        String actionId = pendingEditId;
+        pendingEditId = null;
+        if (actionId == null || tableModel == null || table == null) return;
+        for (int row = 0; row < tableModel.getRowCount(); row++) {
+            if (!actionId.equals(tableModel.getRow(row).getId())) continue;
+            table.setRowSelectionInterval(row, row);
+            table.scrollRectToVisible(table.getCellRect(row, 0, true));
+            editAction();
+            return;
+        }
     }
 
     /**
