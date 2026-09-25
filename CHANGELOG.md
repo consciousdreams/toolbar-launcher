@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- Right-click a Toolbar Launcher button and choose **Configure** to open that button's edit dialog in **Settings → Tools → Toolbar Launcher**.
+
+## [1.0.4] - 2026-09-22
+
 ### Fixed
 
 - Make native Maven integration optional so the plugin can load in PhpStorm; Maven buttons explain how to use a Shell action when the integration is unavailable.
@@ -55,7 +61,8 @@
 - Plugin icon displayed in Marketplace and Settings → Plugins
 - GitHub Actions CI/CD workflows for automated build, verification, signing, and Marketplace publishing
 
-[Unreleased]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.3...HEAD
+[Unreleased]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.4...HEAD
+[1.0.4]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.3...1.0.4
 [1.0.3]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.1...1.0.2
 [1.0.1]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.0...1.0.1
