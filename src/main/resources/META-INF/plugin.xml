@@ -19,6 +19,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="it.consciousdreams.ToolbarLauncherSettings"/>
+        <applicationService serviceImplementation="it.consciousdreams.ToolbarButtonContextMenu"/>
         <keymapExtension implementation="it.consciousdreams.ToolbarLauncherKeymapExtension"/>
         <applicationConfigurable
             parentId="tools"
@@ -28,6 +29,11 @@
     </extensions>
 
     <actions>
+        <action id="it.consciousdreams.ConfigureToolbarButton"
+                class="it.consciousdreams.ConfigureToolbarButtonAction"
+                text="Configure...">
+            <add-to-group group-id="ToolbarPopupActions" anchor="first"/>
+        </action>
         <group
             id="it.consciousdreams.ToolbarLauncherGroup"
             class="it.consciousdreams.ToolbarLauncherActionGroup"
