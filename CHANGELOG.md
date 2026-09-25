@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-09-25
+
 ### Added
 
 - Right-click a Toolbar Launcher button and choose **Configure** to open that button's edit dialog in **Settings → Tools → Toolbar Launcher**.
@@ -61,7 +63,8 @@
 - Plugin icon displayed in Marketplace and Settings → Plugins
 - GitHub Actions CI/CD workflows for automated build, verification, signing, and Marketplace publishing
 
-[Unreleased]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.4...HEAD
+[Unreleased]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.5...HEAD
+[1.0.5]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.4...1.0.5
 [1.0.4]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.3...1.0.4
 [1.0.3]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.2...1.0.3
 [1.0.2]: https://github.com/consciousdreams/toolbar-launcher/compare/1.0.1...1.0.2
